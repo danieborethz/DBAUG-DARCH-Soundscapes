@@ -1,0 +1,149 @@
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using UnityEngine;
+using System.IO;
+
+[System.Serializable]
+public class SoundSourceAudio : SoundSource
+{
+    [SerializeField]
+    [HideInInspector]
+    private string _cacheFilePath;
+
+    public string cacheFilePath
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(_cacheFilePath))
+            {
+                _cacheFilePath = Path.Combine(Application.dataPath, "AudioDataCache.json");
+            }
+            return _cacheFilePath;
+        }
+        set
+        {
+            _cacheFilePath = value;
+        }
+    }
+
+
+    [SerializeField]
+    [HideInInspector]
+    public int selectedCategoryIndex = 0;
+
+    [SerializeField]
+    [HideInInspector]
+    public string selectedCategoryName;
+
+    [SerializeField]
+    [HideInInspector]
+    public int selectedAudioIndex = 0;
+
+    [SerializeField]
+    [HideInInspector]
+    public string selectedAudioName;
+
+    [SerializeField]
+    [HideInInspector]
+    public int sourceTypeSelection = 0;
+
+    [SerializeField]
+    [HideInInspector]
+    public int sourceSelection = 0;
+
+    [SerializeField]
+    [HideInInspector]
+    public float multiSize = 1.0f;
+
+    [SerializeField]
+    [HideInInspector]
+    public int monoSources;
+
+    [SerializeField]
+    [HideInInspector]
+    public int stereoSources;
+
+    [SerializeField]
+    [HideInInspector]
+    public int multiSources;
+
+    [SerializeField]
+    [HideInInspector]
+    public AudioLibrary audioLibrary;
+
+    [SerializeField]
+    [HideInInspector]
+    public List<AudioCategory> categories;
+
+    [SerializeField]
+    [HideInInspector]
+    public List<AudioItem> currentAudioItems;
+
+    [SerializeField]
+    [HideInInspector]
+    public List<ParameterValue> parameterValues = new List<ParameterValue>();
+
+    // Override properties to provide data to the base class
+    protected override string SourceType => sourceTypes[sourceTypeSelection];
+    protected override int SourceSelection => sourceSelection;
+    protected override float MultiSize => multiSize;
+    protected override List<ParameterValue> ParameterValues => parameterValues;
+
+    protected override void Start()
+    {
+        base.Start();
+        UpdateSoundFile();
+    }
+
+    protected override void Update()
+    {
+        base.Update();
+        // Any additional update logic specific to SoundSourceAudio
+    }
+
+    void UpdateSoundFile()
+    {
+        if (osc != null && currentAudioItems != null && selectedAudioIndex < currentAudioItems.Count)
+        {
+            OscMessage message = new OscMessage
+            {
+                address = $"/source/{SourceType}/{SourceSelection + 1}/soundpath"
+            };
+
+            string filePath = currentAudioItems[selectedAudioIndex].audioFilePath;
+
+            // Check if the operating system is Windows
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                filePath = filePath.Replace("\\", "/");
+            }
+
+            message.values.Add(filePath);
+            osc.Send(message);
+
+            Debug.Log($"Current audio item is: {filePath}");
+        }
+    }
+
+    public void LoadAudioLibrary()
+    {
+        if (File.Exists(cacheFilePath))
+        {
+            string json = File.ReadAllText(cacheFilePath);
+            audioLibrary = JsonUtility.FromJson<AudioLibrary>(json);
+            categories = audioLibrary.categories;
+            monoSources = audioLibrary.monoSources;
+            stereoSources = audioLibrary.stereoSources;
+            multiSources = audioLibrary.ambisonicSources;
+
+            // Mark the component as dirty to save changes
+#if UNITY_EDITOR
+            UnityEditor.EditorUtility.SetDirty(this);
+#endif
+        }
+        else
+        {
+            Debug.LogError("Cache file not found at: " + cacheFilePath);
+        }
+    }
+}

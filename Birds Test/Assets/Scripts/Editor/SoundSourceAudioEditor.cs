@@ -4,22 +4,20 @@ using System.IO;
 using System.Collections.Generic;
 using System;
 
-[CustomEditor(typeof(SoundSource))]
-public class SoundSourceEditor : Editor
+[CustomEditor(typeof(SoundSourceAudio))]
+public class SoundSourceAudioEditor : Editor
 {
-    private SoundSource component;
+    private SoundSourceAudio component;
     private string[] categoryNames;
     private string[] audioNames;
     private string[] sourceOptions;
 
     void OnEnable()
     {
-        component = (SoundSource)target;
+        component = (SoundSourceAudio)target;
 
-        if (component.audioLibrary == null)
-        {
-            LoadAudioLibrary();
-        }
+        // Load the audio library using the component's method
+        component.LoadAudioLibrary();
 
         UpdateCategoryNames();
 
@@ -40,50 +38,12 @@ public class SoundSourceEditor : Editor
         }
 
         UpdateParameterValues();
-        UpdateMonoSourceOptions();
+        UpdateSourceOptions();
     }
 
     public override void OnInspectorGUI()
     {
         serializedObject.Update();
-
-        if (GUILayout.Button("Reload Audio Library", GUILayout.Height(40)))
-        {
-            LoadAudioLibrary();
-            UpdateCategoryNames();
-
-            if (!string.IsNullOrEmpty(component.selectedCategoryName))
-            {
-                component.selectedCategoryIndex = Array.FindIndex(categoryNames, name => name == component.selectedCategoryName);
-                if (component.selectedCategoryIndex == -1)
-                    component.selectedCategoryIndex = 0;
-            }
-            else
-            {
-                component.selectedCategoryIndex = 0;
-                component.selectedCategoryName = categoryNames.Length > 0 ? categoryNames[0] : "";
-            }
-
-            UpdateAudioNames();
-
-            if (!string.IsNullOrEmpty(component.selectedAudioName))
-            {
-                component.selectedAudioIndex = Array.FindIndex(audioNames, name => name == component.selectedAudioName);
-                if (component.selectedAudioIndex == -1)
-                    component.selectedAudioIndex = 0;
-            }
-            else
-            {
-                component.selectedAudioIndex = 0;
-                component.selectedAudioName = audioNames.Length > 0 ? audioNames[0] : "";
-            }
-
-            UpdateParameterValues();
-            UpdateMonoSourceOptions();
-
-            // Mark the component as dirty to save changes
-            EditorUtility.SetDirty(component);
-        }
 
         GUILayout.Space(10);
 
@@ -158,7 +118,7 @@ public class SoundSourceEditor : Editor
                 if (newSourceSelection != component.sourceTypeSelection)
                 {
                     component.sourceTypeSelection = newSourceSelection;
-                    UpdateMonoSourceOptions();
+                    UpdateSourceOptions();
 
                     // Mark the component as dirty to save changes
                     EditorUtility.SetDirty(component);
@@ -169,15 +129,15 @@ public class SoundSourceEditor : Editor
 
             if (sourceOptions == null || sourceOptions.Length == 0)
             {
-                UpdateMonoSourceOptions();
+                UpdateSourceOptions();
             }
 
             if (sourceOptions != null && sourceOptions.Length > 0)
             {
-                int newMonoSourceSelection = EditorGUILayout.Popup("Source", component.sourceSelection, sourceOptions);
-                if (newMonoSourceSelection != component.sourceSelection)
+                int newSourceSelection = EditorGUILayout.Popup("Source", component.sourceSelection, sourceOptions);
+                if (newSourceSelection != component.sourceSelection)
                 {
-                    component.sourceSelection = newMonoSourceSelection;
+                    component.sourceSelection = newSourceSelection;
 
                     // Mark the component as dirty to save changes
                     EditorUtility.SetDirty(component);
@@ -321,7 +281,7 @@ public class SoundSourceEditor : Editor
         EditorUtility.SetDirty(component);
     }
 
-    private void UpdateMonoSourceOptions()
+    private void UpdateSourceOptions()
     {
         int sourceCount = 0;
         string sourceType = component.sourceTypes[component.sourceTypeSelection];

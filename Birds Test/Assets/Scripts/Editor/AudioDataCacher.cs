@@ -1,5 +1,6 @@
-// AudioDataCacher.cs
 using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEditorInternal;
 using UnityEngine;
 using System.IO;
 using System.Collections.Generic;
@@ -94,6 +95,47 @@ public class AudioDataCacher : EditorWindow
         File.WriteAllText(cacheFilePath, json);
         AssetDatabase.Refresh();
         Debug.Log("Audio data cached successfully at: " + cacheFilePath);
+
+        // Now update all SoundSourceAudio components
+        UpdateAllSoundSourceAudioComponents();
+    }
+
+    private void UpdateAllSoundSourceAudioComponents()
+    {
+        // Get all loaded scenes
+        for (int i = 0; i < EditorSceneManager.sceneCount; i++)
+        {
+            var scene = EditorSceneManager.GetSceneAt(i);
+
+            if (scene.isLoaded)
+            {
+                var rootObjects = scene.GetRootGameObjects();
+
+                foreach (var rootObject in rootObjects)
+                {
+                    var components = rootObject.GetComponentsInChildren<SoundSourceAudio>(true);
+
+                    foreach (var component in components)
+                    {
+                        // Update the cacheFilePath in case it's different
+                        component.cacheFilePath = cacheFilePath;
+
+                        // Reload the audio library
+                        component.LoadAudioLibrary();
+
+                        // Mark the component and scene as dirty
+                        EditorUtility.SetDirty(component);
+                        EditorSceneManager.MarkSceneDirty(component.gameObject.scene);
+                    }
+                }
+            }
+        }
+
+        // Save all open scenes
+        EditorSceneManager.SaveOpenScenes();
+
+        // Refresh the editor views
+        InternalEditorUtility.RepaintAllViews();
     }
 
     private void ScanFolder(string folderPath, List<AudioCategory> categories, string relativePath)

@@ -4,59 +4,6 @@
     "ambisonicSources": 3,
     "categories": [
         {
-            "categoryName": "AudioSH",
-            "audioItems": [
-                {
-                    "displayName": "B-Format_Atmo_Kreisel",
-                    "audioFilePath": "C:/Users/daniebor/Downloads/ISG_AudioFiles/AudioFiles\\AudioSH\\B-Format_Atmo_Kreisel.wav",
-                    "parametersFilePath": "",
-                    "parameters": []
-                },
-                {
-                    "displayName": "SH_GANG_Baustelle_Arbeiten",
-                    "audioFilePath": "C:/Users/daniebor/Downloads/ISG_AudioFiles/AudioFiles\\AudioSH\\SH_GANG_Baustelle_Arbeiten.wav",
-                    "parametersFilePath": "",
-                    "parameters": []
-                },
-                {
-                    "displayName": "SH_GANG_Baustelle_Arbeiten_Maschine",
-                    "audioFilePath": "C:/Users/daniebor/Downloads/ISG_AudioFiles/AudioFiles\\AudioSH\\SH_GANG_Baustelle_Arbeiten_Maschine.wav",
-                    "parametersFilePath": "",
-                    "parameters": []
-                },
-                {
-                    "displayName": "SH_GANG_Bus",
-                    "audioFilePath": "C:/Users/daniebor/Downloads/ISG_AudioFiles/AudioFiles\\AudioSH\\SH_GANG_Bus.wav",
-                    "parametersFilePath": "",
-                    "parameters": []
-                },
-                {
-                    "displayName": "SH_GANG_Bus_schnell",
-                    "audioFilePath": "C:/Users/daniebor/Downloads/ISG_AudioFiles/AudioFiles\\AudioSH\\SH_GANG_Bus_schnell.wav",
-                    "parametersFilePath": "",
-                    "parameters": []
-                },
-                {
-                    "displayName": "SH_GANG_Bus_Schnell_2",
-                    "audioFilePath": "C:/Users/daniebor/Downloads/ISG_AudioFiles/AudioFiles\\AudioSH\\SH_GANG_Bus_Schnell_2.wav",
-                    "parametersFilePath": "",
-                    "parameters": []
-                },
-                {
-                    "displayName": "SH_GANG_Lastwagenklein",
-                    "audioFilePath": "C:/Users/daniebor/Downloads/ISG_AudioFiles/AudioFiles\\AudioSH\\SH_GANG_Lastwagenklein.wav",
-                    "parametersFilePath": "",
-                    "parameters": []
-                },
-                {
-                    "displayName": "SH_GANG_Zuege",
-                    "audioFilePath": "C:/Users/daniebor/Downloads/ISG_AudioFiles/AudioFiles\\AudioSH\\SH_GANG_Zuege.wav",
-                    "parametersFilePath": "",
-                    "parameters": []
-                }
-            ]
-        },
-        {
             "categoryName": "Bahnhof",
             "audioItems": [
                 {
