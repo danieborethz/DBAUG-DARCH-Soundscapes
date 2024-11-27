@@ -19,6 +19,8 @@ public class SceneManager : MonoBehaviour
 
     public bool useBinauralSound = true;
 
+    public string ambientSoundFile = "";
+
     public event Action<bool> OnEnableWindChanged;
     public event Action<bool> OnEnableWaterChanged;
 
@@ -119,6 +121,16 @@ public class SceneManager : MonoBehaviour
             };
             message.values.Add(useBinauralSound);
             osc.Send(message);
+
+            if (ambientSoundFile != "")
+            {
+                message = new OscMessage
+                {
+                    address = "/source/ambientSound"
+                };
+                message.values.Add(ambientSoundFile);
+                osc.Send(message);
+            }
         }
     }
 }
