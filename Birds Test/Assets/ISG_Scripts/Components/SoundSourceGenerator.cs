@@ -73,7 +73,45 @@ public class SoundSourceGenerator : SoundSource
     {
         base.Update();
 
-        if (selectedGeneratorTypeIndex == 1 && (selectedWaterTypeIndex == 0 || selectedWaterTypeIndex == 5))
+        if (selectedGeneratorTypeIndex == 0)
+        {
+            // Check if there are child elements and calculate the bounding box of all of them together
+            if (transform.childCount > 0)
+            {
+                Bounds combinedBounds = new Bounds(transform.position, Vector3.zero);
+                bool boundsInitialized = false;
+
+                foreach (Transform child in transform)
+                {
+                    Renderer childRenderer = child.GetComponent<Renderer>();
+                    if (childRenderer != null)
+                    {
+                        if (!boundsInitialized)
+                        {
+                            combinedBounds = childRenderer.bounds;
+                            boundsInitialized = true;
+                        }
+                        else
+                        {
+                            combinedBounds.Encapsulate(childRenderer.bounds);
+                        }
+                    }
+                }
+
+                // Visualize the bounding box using the debugMesh
+                if (debugMesh != null)
+                {
+                    debugMesh.transform.position = combinedBounds.center;
+                    debugMesh.transform.localScale = combinedBounds.size;
+                }
+            }
+            else
+            {
+                // Send single mesh value
+            }
+        }
+
+        else if (selectedGeneratorTypeIndex == 1 && (selectedWaterTypeIndex == 0 || selectedWaterTypeIndex == 5))
         {
             if (meshCollider != null && mainCamera != null)
             {
