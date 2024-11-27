@@ -29,6 +29,7 @@ public class SoundSourceGenerator : SoundSource
     private GameObject debugMesh;
     private MeshFilter meshFilter;
     private MeshCollider meshCollider;
+    private Bounds combinedBounds;
 
     protected override void Awake()
     {
@@ -52,6 +53,69 @@ public class SoundSourceGenerator : SoundSource
         {
             AddOrReplaceMeshCollider();
         }
+
+        // Subscribe to the SceneManager's EnableWind change event
+        SceneManager.Instance.OnEnableWindChanged += HandleEnableWindChanged;
+
+        // Initial calculation
+        if (selectedGeneratorTypeIndex == 0 && SceneManager.Instance.EnableWind)
+        {
+            CalculateBounds();
+        }
+    }
+
+    private void HandleEnableWindChanged(bool isEnabled)
+    {
+        if (selectedGeneratorTypeIndex == 0 && isEnabled)
+        {
+            CalculateBounds();
+        }
+    }
+
+    private void OnDestroy()
+    {
+        // Unsubscribe to avoid memory leaks
+        if (SceneManager.Instance != null)
+        {
+            SceneManager.Instance.OnEnableWindChanged -= HandleEnableWindChanged;
+        }
+    }
+
+    private void CalculateBounds()
+    {
+        // Check if there are child elements and calculate the bounding box of all of them together
+        if (transform.childCount > 0)
+        {
+            bool boundsInitialized = false;
+            combinedBounds = new Bounds(transform.position, Vector3.zero);
+            foreach (Transform child in transform)
+            {
+                Renderer childRenderer = child.GetComponent<Renderer>();
+                if (childRenderer != null)
+                {
+                    if (!boundsInitialized)
+                    {
+                        combinedBounds = childRenderer.bounds;
+                        boundsInitialized = true;
+                    }
+                    else
+                    {
+                        combinedBounds.Encapsulate(childRenderer.bounds);
+                    }
+                }
+            }
+
+            // Visualize the bounding box using the debugMesh
+            if (debugMesh != null)
+            {
+                debugMesh.transform.position = combinedBounds.center;
+                debugMesh.transform.localScale = combinedBounds.size;
+            }
+        }
+        else
+        {
+            // Send single mesh value
+        }
     }
 
     private void AddOrReplaceMeshCollider()
@@ -73,45 +137,7 @@ public class SoundSourceGenerator : SoundSource
     {
         base.Update();
 
-        if (selectedGeneratorTypeIndex == 0)
-        {
-            // Check if there are child elements and calculate the bounding box of all of them together
-            if (transform.childCount > 0)
-            {
-                Bounds combinedBounds = new Bounds(transform.position, Vector3.zero);
-                bool boundsInitialized = false;
-
-                foreach (Transform child in transform)
-                {
-                    Renderer childRenderer = child.GetComponent<Renderer>();
-                    if (childRenderer != null)
-                    {
-                        if (!boundsInitialized)
-                        {
-                            combinedBounds = childRenderer.bounds;
-                            boundsInitialized = true;
-                        }
-                        else
-                        {
-                            combinedBounds.Encapsulate(childRenderer.bounds);
-                        }
-                    }
-                }
-
-                // Visualize the bounding box using the debugMesh
-                if (debugMesh != null)
-                {
-                    debugMesh.transform.position = combinedBounds.center;
-                    debugMesh.transform.localScale = combinedBounds.size;
-                }
-            }
-            else
-            {
-                // Send single mesh value
-            }
-        }
-
-        else if (selectedGeneratorTypeIndex == 1 && (selectedWaterTypeIndex == 0 || selectedWaterTypeIndex == 5))
+        if (selectedGeneratorTypeIndex == 1 && (selectedWaterTypeIndex == 0 || selectedWaterTypeIndex == 5) && SceneManager.Instance.EnableWater)
         {
             if (meshCollider != null && mainCamera != null)
             {
