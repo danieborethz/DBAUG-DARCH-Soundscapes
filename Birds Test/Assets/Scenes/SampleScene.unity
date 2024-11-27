@@ -4264,6 +4264,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6991b9cc9f865f84ba299492f5d4ac04, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  windIntensity: 1
   enableWind: 0
   enableWater: 1
 --- !u!1 &1312451658

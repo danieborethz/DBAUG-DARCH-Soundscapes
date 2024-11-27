@@ -1,9 +1,15 @@
 using System;
 using UnityEngine;
+using static SoundSource;
 
 public class SceneManager : MonoBehaviour
 {
     public static SceneManager Instance { get; private set; }
+
+    protected OSC osc;
+
+    [Range(0f, 10f)]
+    public float windIntensity = 1.0f;
 
     [SerializeField]
     private bool enableWind = true;
@@ -16,6 +22,7 @@ public class SceneManager : MonoBehaviour
 
     private bool lastEnableWind;
     private bool lastEnableWater;
+    private float lastWindIntensity;
 
     public bool EnableWind
     {
@@ -60,6 +67,9 @@ public class SceneManager : MonoBehaviour
     {
         lastEnableWind = enableWind;
         lastEnableWater = enableWater;
+
+        osc = FindObjectOfType<OSC>();
+        SendMessage();
     }
 
     private void Update()
@@ -75,6 +85,25 @@ public class SceneManager : MonoBehaviour
         {
             lastEnableWater = enableWater;
             OnEnableWaterChanged?.Invoke(enableWater);
+        }
+
+        if (Math.Abs(lastWindIntensity - windIntensity) > Mathf.Epsilon)
+        {
+            lastWindIntensity = windIntensity;
+            SendMessage();
+        }
+    }
+
+    private void SendMessage()
+    {
+        if (osc != null)
+        {
+            OscMessage message = new OscMessage
+            {
+                address = "/source/windIntensity"
+            };
+            message.values.Add(windIntensity);
+            osc.Send(message);
         }
     }
 }
