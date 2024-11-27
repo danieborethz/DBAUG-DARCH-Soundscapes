@@ -17,11 +17,14 @@ public class SceneManager : MonoBehaviour
     [SerializeField]
     private bool enableWater = true;
 
+    public bool useBinauralSound = true;
+
     public event Action<bool> OnEnableWindChanged;
     public event Action<bool> OnEnableWaterChanged;
 
     private bool lastEnableWind;
     private bool lastEnableWater;
+    private bool lastBinauralSound;
     private float lastWindIntensity;
 
     public bool EnableWind
@@ -87,6 +90,11 @@ public class SceneManager : MonoBehaviour
             OnEnableWaterChanged?.Invoke(enableWater);
         }
 
+        if (useBinauralSound != lastBinauralSound)
+        {
+            SendMessage();
+        }
+
         if (Math.Abs(lastWindIntensity - windIntensity) > Mathf.Epsilon)
         {
             lastWindIntensity = windIntensity;
@@ -103,6 +111,13 @@ public class SceneManager : MonoBehaviour
                 address = "/source/windIntensity"
             };
             message.values.Add(windIntensity);
+            osc.Send(message);
+
+            message = new OscMessage
+            {
+                address = "/source/useBinauralSound"
+            };
+            message.values.Add(useBinauralSound);
             osc.Send(message);
         }
     }

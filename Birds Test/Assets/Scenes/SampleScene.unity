@@ -4267,6 +4267,7 @@ MonoBehaviour:
   windIntensity: 1
   enableWind: 0
   enableWater: 1
+  useBinauralSound: 1
 --- !u!1 &1312451658
 GameObject:
   m_ObjectHideFlags: 0
