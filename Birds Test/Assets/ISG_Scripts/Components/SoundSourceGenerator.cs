@@ -17,9 +17,8 @@ public class SoundSourceGenerator : SoundSource
     public int selectedWaterTypeIndex = 0;
     public float size = 1.0f;
 
-    // Override properties to provide data to the base class
     protected override string SourceType => "generator";
-    protected override int SourceSelection => 0; // Assuming only one generator source
+    protected override int SourceSelection => 0;
     protected override float MultiSize => selectedGeneratorTypeIndex == 0 ? leavesTreeSize : size;
     protected override List<ParameterValue> ParameterValues => parameterValues;
 
@@ -27,22 +26,64 @@ public class SoundSourceGenerator : SoundSource
     [HideInInspector]
     public List<ParameterValue> parameterValues = new List<ParameterValue>();
 
+    private GameObject debugMesh;
+    private MeshFilter meshFilter;
+    private MeshCollider meshCollider;
+
     protected override void Awake()
     {
         base.Awake();
-        // Additional initialization if needed
     }
 
     protected override void Start()
     {
         base.Start();
-        // Additional start logic if needed
+        GameObject[] allObjects = FindObjectsOfType<GameObject>();
+        foreach (GameObject obj in allObjects)
+        {
+            if (obj.layer == 3) // Assuming layer 3 is the debug mesh
+            {
+                debugMesh = obj;
+            }
+        }
+
+        meshFilter = GetComponent<MeshFilter>();
+        if (meshFilter != null)
+        {
+            AddOrReplaceMeshCollider();
+        }
+    }
+
+    private void AddOrReplaceMeshCollider()
+    {
+        // Check if a collider already exists and remove it
+        MeshCollider existingCollider = GetComponent<MeshCollider>();
+        if (existingCollider != null)
+        {
+            Destroy(existingCollider);
+        }
+
+        // Add a new MeshCollider and set it to convex
+        meshCollider = gameObject.AddComponent<MeshCollider>();
+        meshCollider.sharedMesh = meshFilter.sharedMesh;
+        meshCollider.convex = true; // Enable convex mode for compatibility with ClosestPoint
     }
 
     protected override void Update()
     {
         base.Update();
-        // Additional update logic if needed
+
+        if (selectedGeneratorTypeIndex == 1 && (selectedWaterTypeIndex == 0 || selectedWaterTypeIndex == 5))
+        {
+            if (meshCollider != null && mainCamera != null)
+            {
+                Vector3 cameraPosition = mainCamera.transform.position;
+                Vector3 closestPoint = Physics.ClosestPoint(cameraPosition, meshCollider, meshCollider.transform.position, meshCollider.transform.rotation);
+
+                // Ensure the debug mesh stays as close as possible to the camera while on the surface
+                debugMesh.transform.position = closestPoint;
+            }
+        }
     }
 
     protected override void SendMessages()
@@ -53,7 +94,6 @@ public class SoundSourceGenerator : SoundSource
         {
             string source = $"/source/{SourceType}/1";
 
-            // Send generator type
             OscMessage message = new OscMessage
             {
                 address = $"{source}/generatorType"
@@ -62,9 +102,8 @@ public class SoundSourceGenerator : SoundSource
             message.values.Add(generatorType);
             osc.Send(message);
 
-            if (selectedGeneratorTypeIndex == 0) // Wind
+            if (selectedGeneratorTypeIndex == 0)
             {
-                // Send foliage type
                 message = new OscMessage
                 {
                     address = $"{source}/foliageType"
@@ -73,7 +112,6 @@ public class SoundSourceGenerator : SoundSource
                 message.values.Add(foliageType);
                 osc.Send(message);
 
-                // Send leavesTreeSize
                 message = new OscMessage
                 {
                     address = $"{source}/leavesTreeSize"
@@ -81,9 +119,8 @@ public class SoundSourceGenerator : SoundSource
                 message.values.Add(leavesTreeSize);
                 osc.Send(message);
             }
-            else if (selectedGeneratorTypeIndex == 1) // Water
+            else if (selectedGeneratorTypeIndex == 1)
             {
-                // Send water type
                 message = new OscMessage
                 {
                     address = $"{source}/waterType"
@@ -92,7 +129,6 @@ public class SoundSourceGenerator : SoundSource
                 message.values.Add(waterType);
                 osc.Send(message);
 
-                // Send size
                 message = new OscMessage
                 {
                     address = $"{source}/size"
