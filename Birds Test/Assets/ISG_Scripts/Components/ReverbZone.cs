@@ -147,22 +147,4 @@ public class ReverbZone : MonoBehaviour
 
         Gizmos.matrix = oldMatrix;
     }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        // Implement logic to apply audio parameters when an object enters the zone
-        if (other.CompareTag("Player"))
-        {
-            // Apply audio effects to the player's audio source
-        }
-    }
-
-    private void OnTriggerExit(Collider other)
-    {
-        // Implement logic to revert audio parameters when an object exits the zone
-        if (other.CompareTag("Player"))
-        {
-            // Revert audio effects on the player's audio source
-        }
-    }
 }
