@@ -16,8 +16,8 @@ public class PlayerReverbController : MonoBehaviour
         }
         else
         {
-            // Player is not inside any zone
-            Debug.Log("Player is not inside any ReverbZone.");
+            // TODO: Turn of reverb
+            
         }
     }
 
