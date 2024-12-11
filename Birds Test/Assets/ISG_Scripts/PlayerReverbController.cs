@@ -86,7 +86,7 @@ public class PlayerReverbController : MonoBehaviour
             accumulatedEq = accumulatedEq / totalWeight;
 
             // Log the interpolated values
-            Debug.Log($"Interpolated Parameters - RoomSize: {accumulatedRoomSize}, DecayTime: {accumulatedDecayTime}, WetDryMix: {accumulatedWetDryMix}, Eq: {accumulatedEq}");
+            //Debug.Log($"Interpolated Parameters - RoomSize: {accumulatedRoomSize}, DecayTime: {accumulatedDecayTime}, WetDryMix: {accumulatedWetDryMix}, Eq: {accumulatedEq}");
         }
     }
 
