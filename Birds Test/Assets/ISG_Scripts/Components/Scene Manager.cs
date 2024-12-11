@@ -20,6 +20,8 @@ public class SceneManager : MonoBehaviour
     [Header("Audio Settings")]
     public bool useBinauralSound = true;
     public string ambientSoundFile = "";
+    [Range(0f, 5f)]
+    public float distanceScale = 0.5f;
 
     [Header("Materials and Rendering")]
     [Tooltip("Assign the material that should have its wind properties updated.")]
@@ -34,6 +36,7 @@ public class SceneManager : MonoBehaviour
     private bool lastEnableWater;
     private bool lastBinauralSound;
     private float lastWindIntensity;
+    private float lastDistanceScale;
 
     // State tracking for OSC message sending
     private bool lastSentEnableWind;
@@ -41,6 +44,7 @@ public class SceneManager : MonoBehaviour
     private float lastSentWindIntensity;
     private bool lastSentBinauralSound;
     private string lastSentAmbientSoundFile;
+    private float lastSentDistanceScale;
 
     // Cache of all MeshRenderers that use the windMaterial
     private MeshRenderer[] windMeshes;
@@ -93,12 +97,14 @@ public class SceneManager : MonoBehaviour
         lastEnableWater = enableWater;
         lastBinauralSound = useBinauralSound;
         lastWindIntensity = windIntensity;
+        lastDistanceScale = distanceScale;
 
         // Initialize the "lastSent" values so that they are guaranteed different
         // from the current settings to ensure initial sending.
         lastSentEnableWind = !enableWind; // Opposite boolean value
         lastSentEnableWater = !enableWater; // Opposite boolean value
         lastSentWindIntensity = float.MinValue; // A value that can't be equal to windIntensity unless windIntensity is also min value
+        lastSentDistanceScale = float.MinValue;
         lastSentBinauralSound = !useBinauralSound; // Opposite boolean
         lastSentAmbientSoundFile = null; // Null ensures difference if ambientSoundFile is not empty
 
@@ -140,6 +146,12 @@ public class SceneManager : MonoBehaviour
         {
             lastWindIntensity = windIntensity;
             UpdateWindMaterials();
+            SendChangedMessages();
+        }
+
+        if (Math.Abs(lastDistanceScale - distanceScale) > Mathf.Epsilon)
+        {
+            lastDistanceScale = distanceScale;
             SendChangedMessages();
         }
 
@@ -243,6 +255,17 @@ public class SceneManager : MonoBehaviour
             message.values.Add(windIntensity);
             osc.Send(message);
             lastSentWindIntensity = windIntensity;
+        }
+
+        if (Math.Abs(lastSentDistanceScale - distanceScale) > Mathf.Epsilon)
+        {
+            OscMessage message = new OscMessage
+            {
+                address = "/master/scale dist"
+            };
+            message.values.Add(distanceScale);
+            osc.Send(message);
+            lastSentDistanceScale = distanceScale;
         }
 
         // Binaural sound
