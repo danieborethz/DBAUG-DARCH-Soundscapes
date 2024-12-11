@@ -8,9 +8,8 @@ public class SceneManager : MonoBehaviour
     protected OSC osc;
 
     [Header("Wind Settings")]
-    [Range(0f, 10f)]
+    [Range(1.0f, 10f)]
     public float windIntensity = 1.0f;
-
     [SerializeField]
     private bool enableWind = true;
 
@@ -30,11 +29,18 @@ public class SceneManager : MonoBehaviour
     public event Action<bool> OnEnableWindChanged;
     public event Action<bool> OnEnableWaterChanged;
 
-    // State tracking
+    // State tracking for inspector-driven changes
     private bool lastEnableWind;
     private bool lastEnableWater;
     private bool lastBinauralSound;
     private float lastWindIntensity;
+
+    // State tracking for OSC message sending
+    private bool lastSentEnableWind;
+    private bool lastSentEnableWater;
+    private float lastSentWindIntensity;
+    private bool lastSentBinauralSound;
+    private string lastSentAmbientSoundFile;
 
     // Cache of all MeshRenderers that use the windMaterial
     private MeshRenderer[] windMeshes;
@@ -49,6 +55,7 @@ public class SceneManager : MonoBehaviour
                 enableWind = value;
                 OnEnableWindChanged?.Invoke(enableWind);
                 UpdateWindMaterials();
+                SendChangedMessages();
             }
         }
     }
@@ -62,6 +69,7 @@ public class SceneManager : MonoBehaviour
             {
                 enableWater = value;
                 OnEnableWaterChanged?.Invoke(enableWater);
+                SendChangedMessages();
             }
         }
     }
@@ -86,15 +94,19 @@ public class SceneManager : MonoBehaviour
         lastBinauralSound = useBinauralSound;
         lastWindIntensity = windIntensity;
 
-        // Find all MeshRenderers that use the specified windMaterial
-        FindWindMaterialMeshes();
+        // Initialize the "lastSent" values so that they are guaranteed different
+        // from the current settings to ensure initial sending.
+        lastSentEnableWind = !enableWind; // Opposite boolean value
+        lastSentEnableWater = !enableWater; // Opposite boolean value
+        lastSentWindIntensity = float.MinValue; // A value that can't be equal to windIntensity unless windIntensity is also min value
+        lastSentBinauralSound = !useBinauralSound; // Opposite boolean
+        lastSentAmbientSoundFile = null; // Null ensures difference if ambientSoundFile is not empty
 
-        // Update materials immediately at game start
+        FindWindMaterialMeshes();
         UpdateWindMaterials();
 
-        // Setup OSC if present
         osc = FindObjectOfType<OSC>();
-        SendMessage();
+        SendChangedMessages();
     }
 
     private void Update()
@@ -105,6 +117,7 @@ public class SceneManager : MonoBehaviour
             lastEnableWind = enableWind;
             OnEnableWindChanged?.Invoke(enableWind);
             UpdateWindMaterials();
+            SendChangedMessages();
         }
 
         // Check if water was toggled in inspector
@@ -112,13 +125,14 @@ public class SceneManager : MonoBehaviour
         {
             lastEnableWater = enableWater;
             OnEnableWaterChanged?.Invoke(enableWater);
+            SendChangedMessages();
         }
 
         // Check if binaural sound was toggled
         if (useBinauralSound != lastBinauralSound)
         {
             lastBinauralSound = useBinauralSound;
-            SendMessage();
+            SendChangedMessages();
         }
 
         // Check if wind intensity changed
@@ -126,7 +140,13 @@ public class SceneManager : MonoBehaviour
         {
             lastWindIntensity = windIntensity;
             UpdateWindMaterials();
-            SendMessage();
+            SendChangedMessages();
+        }
+
+        // Check if ambient sound file changed
+        if (ambientSoundFile != lastSentAmbientSoundFile)
+        {
+            SendChangedMessages();
         }
     }
 
@@ -136,7 +156,6 @@ public class SceneManager : MonoBehaviour
     private void FindWindMaterialMeshes()
     {
         MeshRenderer[] allMeshes = FindObjectsOfType<MeshRenderer>();
-        // Using a temp list to filter, then converting to array
         var meshList = new System.Collections.Generic.List<MeshRenderer>();
 
         foreach (var mesh in allMeshes)
@@ -169,7 +188,6 @@ public class SceneManager : MonoBehaviour
         // Update the _MotionSpeed property on all affected materials
         foreach (var mesh in windMeshes)
         {
-            // Access the instance materials since we might be changing them at runtime
             Material[] mats = mesh.materials;
             for (int i = 0; i < mats.Length; i++)
             {
@@ -182,33 +200,73 @@ public class SceneManager : MonoBehaviour
         }
     }
 
-    private void SendMessage()
+    /// <summary>
+    /// Sends OSC messages only if the relevant values have changed since the last send.
+    /// - Only send windIntensity if enableWind is true.
+    /// - Only send messages if their corresponding value changed from the last sent value.
+    /// </summary>
+    private void SendChangedMessages()
     {
-        if (osc != null)
+        if (osc == null) return;
+
+        // Enable Wind
+        if (lastSentEnableWind != enableWind)
         {
             OscMessage message = new OscMessage
             {
-                address = "/source/windIntensity"
+                address = "/master/windstatus"
+            };
+            message.values.Add(enableWind ? 1 : 0);
+            osc.Send(message);
+            lastSentEnableWind = enableWind;
+        }
+
+        // Enable Water
+        if (lastSentEnableWater != enableWater)
+        {
+            OscMessage message = new OscMessage
+            {
+                address = "/master/waterstatus"
+            };
+            message.values.Add(enableWater ? 1 : 0);
+            osc.Send(message);
+            lastSentEnableWater = enableWater;
+        }
+
+        // Wind Intensity (only if enableWind is true)
+        if (enableWind && Math.Abs(lastSentWindIntensity - windIntensity) > Mathf.Epsilon)
+        {
+            OscMessage message = new OscMessage
+            {
+                address = "/master/windintensity"
             };
             message.values.Add(windIntensity);
             osc.Send(message);
+            lastSentWindIntensity = windIntensity;
+        }
 
-            message = new OscMessage
+        // Binaural sound
+        if (lastSentBinauralSound != useBinauralSound)
+        {
+            OscMessage message = new OscMessage
             {
                 address = "/source/useBinauralSound"
             };
             message.values.Add(useBinauralSound);
             osc.Send(message);
+            lastSentBinauralSound = useBinauralSound;
+        }
 
-            if (!string.IsNullOrEmpty(ambientSoundFile))
+        // Ambient sound file
+        if (ambientSoundFile != lastSentAmbientSoundFile && !string.IsNullOrEmpty(ambientSoundFile))
+        {
+            OscMessage message = new OscMessage
             {
-                message = new OscMessage
-                {
-                    address = "/source/ambientSound"
-                };
-                message.values.Add(ambientSoundFile);
-                osc.Send(message);
-            }
+                address = "/source/ambientSound"
+            };
+            message.values.Add(ambientSoundFile);
+            osc.Send(message);
+            lastSentAmbientSoundFile = ambientSoundFile;
         }
     }
 }
