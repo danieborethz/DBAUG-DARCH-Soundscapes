@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,17 +8,32 @@ public class PlayerReverbController : MonoBehaviour
     // List of ReverbZones the player is currently inside
     private List<ReverbZone> overlappingZones = new List<ReverbZone>();
 
+    protected OSC osc;
+
+    private float accumulatedRoomSize = 0f;
+    private float lastSentAccumulatedRoomSize = 0f;
+
+    private float accumulatedDecayTime = 0f;
+    private float lastSentAccumulatedDecayTime = 0f;
+
+    private float accumulatedWetDryMix = 0f;
+    private float lastSentAccumulatedWetDryMix = 0f;
+
+    private float accumulatedEq = 0f;
+    private float lastAccumulatedEQ = 0f;
+
+    private void Start()
+    {
+        osc = FindObjectOfType<OSC>();
+    }
+
     void Update()
     {
         if (overlappingZones.Count > 0)
         {
             // Calculate interpolated parameters
             InterpolateAndLogParameters();
-        }
-        else
-        {
-            // TODO: Turn of reverb
-            
+            SendChangedMessages();
         }
     }
 
@@ -43,10 +59,10 @@ public class PlayerReverbController : MonoBehaviour
     {
         // Initialize accumulators
         float totalWeight = 0f;
-        float accumulatedRoomSize = 0f;
-        float accumulatedDecayTime = 0f;
-        float accumulatedWetDryMix = 0f;
-        float accumulatedEq = 0f;
+        accumulatedRoomSize = 0f;
+        accumulatedDecayTime = 0f;     
+        accumulatedWetDryMix = 0f;
+        accumulatedEq = 0f;
 
         // Loop through overlapping zones
         foreach (ReverbZone zone in overlappingZones)
@@ -64,13 +80,13 @@ public class PlayerReverbController : MonoBehaviour
         if (totalWeight > 0f)
         {
             // Normalize accumulations
-            float normalizedRoomSize = accumulatedRoomSize / totalWeight;
-            float normalizedDecayTime = accumulatedDecayTime / totalWeight;
-            float normalizedWetDryMix = accumulatedWetDryMix / totalWeight;
-            float normalizedEq = accumulatedEq / totalWeight;
+            accumulatedRoomSize = accumulatedRoomSize / totalWeight;
+            accumulatedDecayTime = accumulatedDecayTime / totalWeight;
+            accumulatedWetDryMix = accumulatedWetDryMix / totalWeight;
+            accumulatedEq = accumulatedEq / totalWeight;
 
             // Log the interpolated values
-            Debug.Log($"Interpolated Parameters - RoomSize: {normalizedRoomSize}, DecayTime: {normalizedDecayTime}, WetDryMix: {normalizedWetDryMix}, Eq: {normalizedEq}");
+            Debug.Log($"Interpolated Parameters - RoomSize: {accumulatedRoomSize}, DecayTime: {accumulatedDecayTime}, WetDryMix: {accumulatedWetDryMix}, Eq: {accumulatedEq}");
         }
     }
 
@@ -94,4 +110,55 @@ public class PlayerReverbController : MonoBehaviour
 
         return weight;
     }
+
+    private void SendChangedMessages()
+    {
+        if (osc == null) return;
+
+        if (Math.Abs(lastSentAccumulatedRoomSize - accumulatedRoomSize) > Mathf.Epsilon)
+        {
+            OscMessage message = new OscMessage
+            {
+                address = "/reverb/roomsize"
+            };
+            message.values.Add(accumulatedRoomSize);
+            osc.Send(message);
+            Debug.Log("Message send with value " + accumulatedRoomSize);
+            lastSentAccumulatedRoomSize = accumulatedRoomSize;
+        }
+
+        if (Math.Abs(lastSentAccumulatedDecayTime - accumulatedDecayTime) > Mathf.Epsilon)
+        {
+            OscMessage message = new OscMessage
+            {
+                address = "/reverb/decaytime"
+            };
+            message.values.Add(accumulatedDecayTime);
+            osc.Send(message);
+            lastSentAccumulatedDecayTime = accumulatedDecayTime;
+        }
+
+        if (Math.Abs(lastSentAccumulatedWetDryMix - accumulatedWetDryMix) > Mathf.Epsilon)
+        {
+            OscMessage message = new OscMessage
+            {
+                address = "/reverb/mix"
+            };
+            message.values.Add(accumulatedWetDryMix);
+            osc.Send(message);
+            lastSentAccumulatedWetDryMix = accumulatedWetDryMix;
+        }
+
+        if (Math.Abs(lastAccumulatedEQ - accumulatedEq) > Mathf.Epsilon)
+        {
+            OscMessage message = new OscMessage
+            {
+                address = "/reverb/eq"
+            };
+            message.values.Add(accumulatedEq);
+            osc.Send(message);
+            lastAccumulatedEQ = accumulatedEq;
+        }
+    }
+
 }

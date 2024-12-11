@@ -174,6 +174,8 @@ public class SoundSourceGenerator : SoundSource
     {
         //base.SendMessages();
 
+        //TODO: Send positional data to corresponding stereo slot
+
         if (osc == null) return;
 
         string source = $"/source/{SourceType}/";
