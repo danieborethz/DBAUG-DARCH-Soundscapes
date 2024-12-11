@@ -172,7 +172,7 @@ public class SoundSourceGenerator : SoundSource
 
     protected override void SendMessages()
     {
-        base.SendMessages();
+        //base.SendMessages();
 
         if (osc == null) return;
 
