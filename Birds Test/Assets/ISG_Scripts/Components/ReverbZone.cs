@@ -5,17 +5,17 @@ public class ReverbZone : MonoBehaviour
 {
     [Header("Audio Parameters")]
 
-    [Range(0f, 10f)]
-    public float RoomSize = 1.0f;
+    [Range(10f, 50000f)]
+    public float RoomSize = 10f;
 
-    [Range(0f, 10f)]
-    public float DecayTime = 1.0f;
+    [Range(0f, 3f)]
+    public float DecayTime = 0f;
 
-    [Range(0f, 10f)]
-    public float WetDryMix = 1.0f;
+    [Range(0f, 1f)]
+    public float WetDryMix = 0f;
 
-    [Range(0f, 10f)]
-    public float Eq = 1.0f;
+    [Range(0f, -20f)]
+    public float Eq = 0f;
 
     [Header("Zone Settings")]
     public Vector3 radii = Vector3.one;
