@@ -191,7 +191,8 @@ public class SoundSourceAudioEditor : Editor
                 if (SourceSelectionManager.IsSourceTaken(currentType, newIndex))
                 {
                     // The chosen source is already taken, so we swap
-                    SoundSourceAudio otherObject = SourceSelectionManager.GetAssignedObject(currentType, newIndex);
+                    SoundSource assignedSource = SourceSelectionManager.GetAssignedObject(currentType, newIndex);
+                    SoundSourceAudio otherObject = assignedSource as SoundSourceAudio;
 
                     if (otherObject != null && otherObject != target)
                     {
@@ -214,7 +215,7 @@ public class SoundSourceAudioEditor : Editor
                     }
                     else
                     {
-                        // If somehow it's the same object or null, just assign normally
+                        // If somehow it's the same object or not a SoundSourceAudio, just assign normally
                         target.sourceSelection = newIndex;
                         SourceSelectionManager.AssignSource(currentType, newIndex, target);
                         EditorUtility.SetDirty(target);
