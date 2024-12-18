@@ -18,7 +18,6 @@ public class SceneManager : MonoBehaviour
     private bool enableWater = true;
 
     [Header("Audio Settings")]
-    public bool useBinauralSound = true;
     public string ambientSoundFile = "";
     [Range(0f, 5f)]
     public float distanceScale = 0.5f;
@@ -34,7 +33,6 @@ public class SceneManager : MonoBehaviour
     // State tracking for inspector-driven changes
     private bool lastEnableWind;
     private bool lastEnableWater;
-    private bool lastBinauralSound;
     private float lastWindIntensity;
     private float lastDistanceScale;
 
@@ -42,7 +40,6 @@ public class SceneManager : MonoBehaviour
     private bool lastSentEnableWind;
     private bool lastSentEnableWater;
     private float lastSentWindIntensity;
-    private bool lastSentBinauralSound;
     private string lastSentAmbientSoundFile;
     private float lastSentDistanceScale;
 
@@ -95,7 +92,6 @@ public class SceneManager : MonoBehaviour
     {
         lastEnableWind = enableWind;
         lastEnableWater = enableWater;
-        lastBinauralSound = useBinauralSound;
         lastWindIntensity = windIntensity;
         lastDistanceScale = distanceScale;
 
@@ -105,7 +101,6 @@ public class SceneManager : MonoBehaviour
         lastSentEnableWater = !enableWater; // Opposite boolean value
         lastSentWindIntensity = float.MinValue; // A value that can't be equal to windIntensity unless windIntensity is also min value
         lastSentDistanceScale = float.MinValue;
-        lastSentBinauralSound = !useBinauralSound; // Opposite boolean
         lastSentAmbientSoundFile = null; // Null ensures difference if ambientSoundFile is not empty
 
         FindWindMaterialMeshes();
@@ -131,13 +126,6 @@ public class SceneManager : MonoBehaviour
         {
             lastEnableWater = enableWater;
             OnEnableWaterChanged?.Invoke(enableWater);
-            SendChangedMessages();
-        }
-
-        // Check if binaural sound was toggled
-        if (useBinauralSound != lastBinauralSound)
-        {
-            lastBinauralSound = useBinauralSound;
             SendChangedMessages();
         }
 
@@ -266,18 +254,6 @@ public class SceneManager : MonoBehaviour
             message.values.Add(distanceScale);
             osc.Send(message);
             lastSentDistanceScale = distanceScale;
-        }
-
-        // Binaural sound
-        if (lastSentBinauralSound != useBinauralSound)
-        {
-            OscMessage message = new OscMessage
-            {
-                address = "/source/useBinauralSound"
-            };
-            message.values.Add(useBinauralSound);
-            osc.Send(message);
-            lastSentBinauralSound = useBinauralSound;
         }
 
         // Ambient sound file

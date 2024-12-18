@@ -21,12 +21,6 @@ public class SoundSourceGenerator : SoundSource
 
     protected override string SourceType => "generator";
     protected override int SourceSelection => 0;
-    protected override float MultiSize => selectedGeneratorTypeIndex == 0 ? leavesTreeSize : size;
-    protected override List<ParameterValue> ParameterValues => parameterValues;
-
-    [SerializeField]
-    [HideInInspector]
-    public List<ParameterValue> parameterValues = new List<ParameterValue>();
 
     private GameObject debugMesh;
     private MeshFilter meshFilter;
@@ -51,6 +45,8 @@ public class SoundSourceGenerator : SoundSource
     protected override void Start()
     {
         base.Start();
+
+        //TODO: Set stereo slot automatically and reassures that not two of the same index are set.
 
         GameObject[] allObjects = FindObjectsOfType<GameObject>();
         foreach (GameObject obj in allObjects)
@@ -172,9 +168,9 @@ public class SoundSourceGenerator : SoundSource
 
     protected override void SendMessages()
     {
+
         //base.SendMessages();
 
-        //TODO: Send positional data to corresponding stereo slot
 
         if (osc == null) return;
 
