@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEditor;
 using System.Linq;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System;
 
 [CustomEditor(typeof(SoundSourceAudio), true)]
 [CanEditMultipleObjects] // Enables multi-object editing
@@ -81,11 +83,21 @@ public class SoundSourceAudioEditor : Editor
             {
                 target.selectedCategoryIndex = newCategoryIndex;
                 target.selectedCategoryName = categoryNames[newCategoryIndex];
+
+                // Update currentAudioItems based on the newly selected category
+                if (target.categories != null && target.categories.Count > newCategoryIndex)
+                {
+                    target.currentAudioItems = target.categories[newCategoryIndex].audioItems;
+                }
+
                 EditorUtility.SetDirty(target);
             }
+
+            // Now that currentAudioItems have been updated, refresh the audioNames array
             UpdateAudioNames();
         }
     }
+
 
     private void DrawAudioDropdown()
     {

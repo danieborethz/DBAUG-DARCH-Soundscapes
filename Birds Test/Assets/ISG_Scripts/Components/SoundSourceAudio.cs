@@ -136,7 +136,16 @@ public class SoundSourceAudio : SoundSource
             stereoSources = audioLibrary.stereoSources;
             multiSources = audioLibrary.ambisonicSources;
 
-            // Mark the component as dirty to save changes
+            // Update currentAudioItems based on the currently selected category
+            if (selectedCategoryIndex >= 0 && selectedCategoryIndex < categories.Count)
+            {
+                currentAudioItems = categories[selectedCategoryIndex].audioItems;
+            }
+            else
+            {
+                currentAudioItems = new List<AudioItem>();
+            }
+
 #if UNITY_EDITOR
             UnityEditor.EditorUtility.SetDirty(this);
 #endif
@@ -146,4 +155,5 @@ public class SoundSourceAudio : SoundSource
             Debug.LogError("Cache file not found at: " + cacheFilePath);
         }
     }
+
 }
