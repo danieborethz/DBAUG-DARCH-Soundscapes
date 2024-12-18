@@ -19,8 +19,7 @@ public class SoundSourceGenerator : SoundSource
     public int selectedWaterTypeIndex = 0;
     public float size = 1.0f;
 
-    protected override string SourceType => "generator";
-    protected override int SourceSelection => 0;
+    protected override string SourceType => "stereo";
 
     private GameObject debugMesh;
     private MeshFilter meshFilter;
@@ -169,12 +168,11 @@ public class SoundSourceGenerator : SoundSource
     protected override void SendMessages()
     {
 
-        //base.SendMessages();
-
+        base.SendMessages();
 
         if (osc == null) return;
 
-        string source = $"/source/{SourceType}/";
+        string source = $"/source/generator/";
 
         // Always send status if changed
         if (lastSentEnableGenerator != enableGenerator)
@@ -182,7 +180,7 @@ public class SoundSourceGenerator : SoundSource
             var genType = (selectedGeneratorTypeIndex == 0) ? "wind" : "water";
             var statusMessage = new OscMessage
             {
-                address = $"{source}/{genType}/1/status"
+                address = $"{source}/{genType}/{SourceSelection}/status"
             };
             statusMessage.values.Add(enableGenerator ? 1 : 0);
             osc.Send(statusMessage);
@@ -203,7 +201,7 @@ public class SoundSourceGenerator : SoundSource
             {
                 var message = new OscMessage
                 {
-                    address = $"{source}/wind/1/type"
+                    address = $"{source}/wind/{SourceSelection}/type"
                 };
                 message.values.Add(selectedFoliageTypeIndex);
                 osc.Send(message);
@@ -215,7 +213,7 @@ public class SoundSourceGenerator : SoundSource
             {
                 var message = new OscMessage
                 {
-                    address = $"{source}/wind/1/size"
+                    address = $"{source}/wind/{SourceSelection}/size"
                 };
                 message.values.Add(leavesTreeSize);
                 osc.Send(message);
@@ -227,7 +225,7 @@ public class SoundSourceGenerator : SoundSource
             {
                 var message = new OscMessage
                 {
-                    address = $"{source}/wind/1/single"
+                    address = $"{source}/wind/{SourceSelection}/single"
                 };
                 message.values.Add(isForest ? 0 : 1);
                 osc.Send(message);
@@ -241,7 +239,7 @@ public class SoundSourceGenerator : SoundSource
             {
                 var message = new OscMessage
                 {
-                    address = $"{source}/water/1/type"
+                    address = $"{source}/water/{SourceSelection}/type"
                 };
                 message.values.Add(selectedWaterTypeIndex);
                 osc.Send(message);
@@ -253,7 +251,7 @@ public class SoundSourceGenerator : SoundSource
             {
                 var message = new OscMessage
                 {
-                    address = $"{source}/water/1/size"
+                    address = $"{source}/water/{SourceSelection}/size"
                 };
                 message.values.Add(size);
                 osc.Send(message);

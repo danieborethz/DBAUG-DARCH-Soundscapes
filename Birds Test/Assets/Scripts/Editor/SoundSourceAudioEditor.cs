@@ -43,7 +43,10 @@ public class SoundSourceAudioEditor : Editor
             // Only assign if it's not already taken (avoid duplicates)
             if (!SourceSelectionManager.IsSourceTaken(st, t.sourceSelection))
             {
-                SourceSelectionManager.AssignSource(st, t.sourceSelection);
+                if (!SourceSelectionManager.IsSourceTaken(st, t.sourceSelection))
+                {
+                    SourceSelectionManager.AssignSource(st, t.sourceSelection, t);
+                }
             }
         }
     }
@@ -141,8 +144,8 @@ public class SoundSourceAudioEditor : Editor
                 EditorUtility.SetDirty(target);
 
                 // Assign the new default source
-                string newTypeName = target.sourceTypes[newSourceType];
-                SourceSelectionManager.AssignSource(newTypeName, target.sourceSelection);
+                string newTypeName = target.sourceTypes[newSourceType]; 
+                SourceSelectionManager.AssignSource(newTypeName, target.sourceSelection, target);
             }
 
             UpdateSourceOptions();
@@ -151,16 +154,12 @@ public class SoundSourceAudioEditor : Editor
 
     private void DrawSourceDropdown()
     {
-        // Determine the "common" source selection among multiple objects
         int commonSourceSelection = sourceSelection.intValue;
         if (targetsList.Select(t => t.sourceSelection).Distinct().Count() > 1)
             commonSourceSelection = -1;
 
         string currentType = targetsList[0].sourceTypes[targetsList[0].sourceTypeSelection];
 
-        // We need to map the actual selected source index (commonSourceSelection)
-        // to the index in sourceOptions. If we have multiple objects with different selections,
-        // we can just default to 0 or handle differently.
         int displayIndex = 0;
         if (commonSourceSelection >= 0)
         {
@@ -169,40 +168,69 @@ public class SoundSourceAudioEditor : Editor
             if (foundIndex >= 0)
                 displayIndex = foundIndex;
         }
-        else
-        {
-            // If multiple objects are selected with different sources,
-            // you may choose to leave it at displayIndex = 0,
-            // or handle it differently if desired.
-        }
 
         int newIndexInArray = EditorGUILayout.Popup("Source", displayIndex, sourceOptions);
 
         // If the user selects a new option
-        if (newIndexInArray != displayIndex)
+        if (newIndexInArray != displayIndex && newIndexInArray >= 0)
         {
             // Parse the selected option to get the actual source index
-            // sourceOptions entries are in the format "mono source 3"
             string selectedOption = sourceOptions[newIndexInArray];
             string[] splitOption = selectedOption.Split(' ');
             int newIndex = int.Parse(splitOption[splitOption.Length - 1]) - 1;
 
-            // Unassign old sources
-            foreach (var t in targetsList)
-            {
-                string oldType = t.sourceTypes[t.sourceTypeSelection];
-                SourceSelectionManager.UnassignSource(oldType, t.sourceSelection);
-            }
-
-            // Assign the new source selection
+            // For each selected target, perform the swap logic
             foreach (var target in targetsList)
             {
-                target.sourceSelection = newIndex;
-                SourceSelectionManager.AssignSource(currentType, newIndex);
-                EditorUtility.SetDirty(target);
+                string oldType = target.sourceTypes[target.sourceTypeSelection];
+                int oldIndex = target.sourceSelection;
+
+                // Unassign the old source
+                SourceSelectionManager.UnassignSource(oldType, oldIndex);
+
+                if (SourceSelectionManager.IsSourceTaken(currentType, newIndex))
+                {
+                    // The chosen source is already taken, so we swap
+                    SoundSourceAudio otherObject = SourceSelectionManager.GetAssignedObject(currentType, newIndex);
+
+                    if (otherObject != null && otherObject != target)
+                    {
+                        // Swap sources
+                        int otherOldIndex = otherObject.sourceSelection;
+
+                        // Unassign the other object's old source
+                        SourceSelectionManager.UnassignSource(currentType, newIndex);
+
+                        // Set the current target's new source
+                        target.sourceSelection = newIndex;
+                        SourceSelectionManager.AssignSource(currentType, newIndex, target);
+
+                        // Set the other object's source to the current one's old source index
+                        otherObject.sourceSelection = oldIndex;
+                        SourceSelectionManager.AssignSource(oldType, oldIndex, otherObject);
+
+                        EditorUtility.SetDirty(otherObject);
+                        EditorUtility.SetDirty(target);
+                    }
+                    else
+                    {
+                        // If somehow it's the same object or null, just assign normally
+                        target.sourceSelection = newIndex;
+                        SourceSelectionManager.AssignSource(currentType, newIndex, target);
+                        EditorUtility.SetDirty(target);
+                    }
+                }
+                else
+                {
+                    // If not taken, simply assign
+                    target.sourceSelection = newIndex;
+                    SourceSelectionManager.AssignSource(currentType, newIndex, target);
+                    EditorUtility.SetDirty(target);
+                }
             }
         }
     }
+
 
 
     private void DrawMultiSizeSlider()
@@ -266,14 +294,10 @@ public class SoundSourceAudioEditor : Editor
         List<string> availableOptions = new List<string>();
         for (int i = 0; i < sourceCount; i++)
         {
-            // Only add this source if it's not already taken
-            if (!SourceSelectionManager.IsSourceTaken(sourceType, i) ||
-                targetsList.Any(t => t.sourceSelection == i && t.sourceTypes[t.sourceTypeSelection] == sourceType))
-            {
-                availableOptions.Add($"{sourceType} source {i + 1}");
-            }
+            // Add all sources unconditionally
+            availableOptions.Add($"{sourceType} source {i + 1}");
         }
-
         sourceOptions = availableOptions.ToArray();
+
     }
 }
