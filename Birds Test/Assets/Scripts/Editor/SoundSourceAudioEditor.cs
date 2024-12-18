@@ -63,7 +63,12 @@ public class SoundSourceAudioEditor : Editor
             DrawAudioDropdown();
             DrawSourceTypeDropdown();
             DrawSourceDropdown();
-            DrawMultiSizeSlider();
+
+            // Only draw the MultiSize slider if the multi-source type is selected
+            if (targetsList.All(t => t.sourceTypeSelection == 2)) // Assuming 2 corresponds to multi-source
+            {
+                DrawMultiSizeSlider();
+            }
         }
         else
         {
@@ -72,6 +77,7 @@ public class SoundSourceAudioEditor : Editor
 
         serializedObject.ApplyModifiedProperties();
     }
+
 
     private void DrawCategoryDropdown()
     {
