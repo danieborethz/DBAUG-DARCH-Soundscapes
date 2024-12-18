@@ -186,13 +186,15 @@ public class SoundSourceGenerator : SoundSource
 
         string source = $"/source/generator";
 
+        var genType = (selectedGeneratorTypeIndex == 0) ? "wind" : "water";
+        var customSourceValue = (selectedGeneratorTypeIndex == 0) ? SourceSelection + 1 : SourceSelection - 3;
+
         // Always send status if changed
         if (lastSentEnableGenerator != enableGenerator)
         {
-            var genType = (selectedGeneratorTypeIndex == 0) ? "wind" : "water";
             var statusMessage = new OscMessage
             {
-                address = $"{source}/{genType}/{SourceSelection + 1}/status"
+                address = $"{source}/{genType}/{customSourceValue}/status"
             };
             statusMessage.values.Add(enableGenerator ? 1 : 0);
             osc.Send(statusMessage);
@@ -209,7 +211,7 @@ public class SoundSourceGenerator : SoundSource
             {
                 var message = new OscMessage
                 {
-                    address = $"{source}/wind/{SourceSelection + 1}/type"
+                    address = $"{source}/wind/{customSourceValue}/type"
                 };
                 message.values.Add(selectedFoliageTypeIndex);
                 osc.Send(message);
@@ -221,7 +223,7 @@ public class SoundSourceGenerator : SoundSource
             {
                 var message = new OscMessage
                 {
-                    address = $"{source}/wind/{SourceSelection + 1}/size"
+                    address = $"{source}/wind/{customSourceValue}/size"
                 };
                 message.values.Add(leavesTreeSize);
                 osc.Send(message);
@@ -233,7 +235,7 @@ public class SoundSourceGenerator : SoundSource
             {
                 var message = new OscMessage
                 {
-                    address = $"{source}/wind/{SourceSelection + 1}/single"
+                    address = $"{source}/wind/{customSourceValue}/single"
                 };
                 message.values.Add(isForest ? 0 : 1);
                 osc.Send(message);
@@ -247,7 +249,7 @@ public class SoundSourceGenerator : SoundSource
             {
                 var message = new OscMessage
                 {
-                    address = $"{source}/water/{SourceSelection + 1}/type"
+                    address = $"{source}/water/{customSourceValue}/type"
                 };
                 message.values.Add(selectedWaterTypeIndex);
                 osc.Send(message);
@@ -259,7 +261,7 @@ public class SoundSourceGenerator : SoundSource
             {
                 var message = new OscMessage
                 {
-                    address = $"{source}/water/{SourceSelection + 1}/size"
+                    address = $"{source}/water/{customSourceValue}/size"
                 };
                 message.values.Add(size);
                 osc.Send(message);

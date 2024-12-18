@@ -93,7 +93,6 @@ public class SoundSource : MonoBehaviour
             List<ParameterValue> parameterValues = ParameterValues;
 
             string source = $"/source/{sourceType}/{sourceSelection + 1}";
-            Debug.Log(gameObject.name + ": " + $"{source}/xyz");
             OscMessage message = new OscMessage
             {
                 address = $"{source}/xyz"
