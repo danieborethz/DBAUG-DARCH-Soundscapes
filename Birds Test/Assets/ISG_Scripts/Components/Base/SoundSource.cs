@@ -50,7 +50,7 @@ public class SoundSource : MonoBehaviour
         SendMessages();
     }
 
-    protected void CalculateRelativePosition()
+    protected virtual void CalculateRelativePosition()
     {
         if (mainCameraTransform != null)
         {

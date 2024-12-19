@@ -34,7 +34,8 @@ public class SoundSourceGenerator : SoundSource
     private MeshFilter meshFilter;
     private MeshCollider meshCollider;
     private Bounds combinedBounds;
-    private bool isForest;
+    private float forestWidth;
+    private Vector3 forestCenter;
 
     // Last sent values for OSC
     private bool lastSentEnableGenerator;
@@ -43,7 +44,8 @@ public class SoundSourceGenerator : SoundSource
     private float lastSentLeavesTreeSize;
     private int lastSentSelectedWaterTypeIndex;
     private float lastSentSize;
-    private bool lastSentIsForest;
+    private float lastSentForestWidth;
+    private Vector3 lastSentForestCenter;
 
     public int SourceSelectionIndex
     {
@@ -90,7 +92,8 @@ public class SoundSourceGenerator : SoundSource
         lastSentLeavesTreeSize = float.MinValue;
         lastSentSelectedWaterTypeIndex = -1;
         lastSentSize = float.MinValue;
-        lastSentIsForest = !isForest;
+        lastSentForestWidth = 0f;
+        lastSentForestCenter = Vector3.zero;
 
         // Initial send of messages
         SendMessages();
@@ -113,12 +116,23 @@ public class SoundSourceGenerator : SoundSource
         }
     }
 
+    protected override void CalculateRelativePosition()
+    {
+        if (selectedGeneratorTypeIndex == 0 && SceneManager.Instance.EnableWind)
+        {
+            relativePosition = forestCenter;
+        }
+        else
+        {
+           base.CalculateRelativePosition();
+        }
+    }
+
     private void CalculateBounds()
     {
         // Check if there are child elements and calculate the bounding box
         if (transform.childCount > 1)
         {
-            isForest = true;
             bool boundsInitialized = false;
             combinedBounds = new Bounds(transform.position, Vector3.zero);
             foreach (Transform child in transform)
@@ -138,15 +152,12 @@ public class SoundSourceGenerator : SoundSource
                 }
             }
 
-            if (debugMesh != null)
-            {
-                debugMesh.transform.position = combinedBounds.center;
-                debugMesh.transform.localScale = combinedBounds.size;
-            }
+            forestWidth = Mathf.Max(combinedBounds.size.x, combinedBounds.size.y, combinedBounds.size.z);
+            forestCenter = combinedBounds.center;
         }
         else
         {
-            isForest = false;
+            forestWidth = 0f;
         }
     }
 
@@ -231,15 +242,15 @@ public class SoundSourceGenerator : SoundSource
             }
 
             // Single/forest
-            if (isForest != lastSentIsForest || selectedGeneratorTypeIndex != lastSentSelectedGeneratorTypeIndex)
+            if (!Mathf.Approximately(forestWidth, lastSentForestWidth) || selectedGeneratorTypeIndex != lastSentSelectedGeneratorTypeIndex)
             {
                 var message = new OscMessage
                 {
-                    address = $"{source}/wind/{customSourceValue}/single"
+                    address = $"{source}/wind/{customSourceValue}/width"
                 };
-                message.values.Add(isForest ? 0 : 1);
+                message.values.Add((forestWidth > 0) ? MapValue(forestWidth, 1f, 100f, 1f, 10f) : 0);
                 osc.Send(message);
-                lastSentIsForest = isForest;
+                lastSentForestWidth = forestWidth;
             }
         }
         else if (selectedGeneratorTypeIndex == 1)
@@ -274,5 +285,18 @@ public class SoundSourceGenerator : SoundSource
         {
             lastSentSelectedGeneratorTypeIndex = selectedGeneratorTypeIndex;
         }
+    }
+
+    private float MapValue(float value, float inMin, float inMax, float outMin, float outMax)
+    {
+        if (value > inMax)
+        {
+            value = inMax;
+        }
+        else if (value < inMin)
+        {
+            value = inMin;
+        }
+        return outMin + (value - inMin) * (outMax - outMin) / (inMax - inMin);
     }
 }
