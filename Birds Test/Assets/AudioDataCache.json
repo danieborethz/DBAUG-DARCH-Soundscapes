@@ -4,47 +4,47 @@
     "ambisonicSources": 3,
     "categories": [
         {
-            "categoryName": "ambisonics",
+            "categoryName": "Ambisonics",
             "audioItems": [
                 {
                     "displayName": "FranceTrains.BBC.EC95Jc",
-                    "audioFilePath": "C:/Users/daniebor/Downloads/ISG_AudioFiles/AudioFiles\\ambisonics\\FranceTrains.BBC.EC95Jc.wav",
+                    "audioFilePath": "C:/Users/daniebor/Downloads/ISG_AudioFiles/AudioFiles\\Ambisonics\\FranceTrains.BBC.EC95Jc.wav",
                     "parametersFilePath": "",
                     "parameters": []
                 },
                 {
                     "displayName": "FranceTrains.BBC.EC95Kh",
-                    "audioFilePath": "C:/Users/daniebor/Downloads/ISG_AudioFiles/AudioFiles\\ambisonics\\FranceTrains.BBC.EC95Kh.wav",
+                    "audioFilePath": "C:/Users/daniebor/Downloads/ISG_AudioFiles/AudioFiles\\Ambisonics\\FranceTrains.BBC.EC95Kh.wav",
                     "parametersFilePath": "",
                     "parameters": []
                 },
                 {
                     "displayName": "MixPre-001_Bin",
-                    "audioFilePath": "C:/Users/daniebor/Downloads/ISG_AudioFiles/AudioFiles\\ambisonics\\MixPre-001_Bin.WAV",
+                    "audioFilePath": "C:/Users/daniebor/Downloads/ISG_AudioFiles/AudioFiles\\Ambisonics\\MixPre-001_Bin.WAV",
                     "parametersFilePath": "",
                     "parameters": []
                 },
                 {
                     "displayName": "TrainsBridges.BBC.EC208Fa",
-                    "audioFilePath": "C:/Users/daniebor/Downloads/ISG_AudioFiles/AudioFiles\\ambisonics\\TrainsBridges.BBC.EC208Fa.wav",
+                    "audioFilePath": "C:/Users/daniebor/Downloads/ISG_AudioFiles/AudioFiles\\Ambisonics\\TrainsBridges.BBC.EC208Fa.wav",
                     "parametersFilePath": "",
                     "parameters": []
                 },
                 {
                     "displayName": "Train_01_loop",
-                    "audioFilePath": "C:/Users/daniebor/Downloads/ISG_AudioFiles/AudioFiles\\ambisonics\\Train_01_loop.wav",
+                    "audioFilePath": "C:/Users/daniebor/Downloads/ISG_AudioFiles/AudioFiles\\Ambisonics\\Train_01_loop.wav",
                     "parametersFilePath": "",
                     "parameters": []
                 },
                 {
                     "displayName": "Train_02_loop",
-                    "audioFilePath": "C:/Users/daniebor/Downloads/ISG_AudioFiles/AudioFiles\\ambisonics\\Train_02_loop.wav",
+                    "audioFilePath": "C:/Users/daniebor/Downloads/ISG_AudioFiles/AudioFiles\\Ambisonics\\Train_02_loop.wav",
                     "parametersFilePath": "",
                     "parameters": []
                 },
                 {
                     "displayName": "Train_03_loop",
-                    "audioFilePath": "C:/Users/daniebor/Downloads/ISG_AudioFiles/AudioFiles\\ambisonics\\Train_03_loop.wav",
+                    "audioFilePath": "C:/Users/daniebor/Downloads/ISG_AudioFiles/AudioFiles\\Ambisonics\\Train_03_loop.wav",
                     "parametersFilePath": "",
                     "parameters": []
                 }

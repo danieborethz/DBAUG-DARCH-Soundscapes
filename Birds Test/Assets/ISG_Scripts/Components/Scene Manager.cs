@@ -263,7 +263,7 @@ public class SceneManager : MonoBehaviour
             string json = File.ReadAllText(cacheFilePath);
             audioLibrary = JsonUtility.FromJson<AudioLibrary>(json);
 
-            var ambisonicsCategory = audioLibrary.categories.FirstOrDefault(c => c.categoryName == "ambisonics");
+            var ambisonicsCategory = audioLibrary.categories.FirstOrDefault(c => string.Equals(c.categoryName, "ambisonics", StringComparison.OrdinalIgnoreCase));
             if (ambisonicsCategory != null)
             {
                 ambisonicAudioItems = ambisonicsCategory.audioItems;
