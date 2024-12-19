@@ -15,12 +15,14 @@ public class SoundSourceGeneratorEditor : Editor
     private SerializedProperty size;
     private SerializedProperty sourceSelectionProp;
 
-    // Note: We keep the variable names the same, but now "wind" uses waterChannelOptions and "water" uses windChannelOptions
+    // New properties for splashing fountain
+    private SerializedProperty splashingTime;
+    private SerializedProperty splashingBreak;
+
     private string[] generatorTypes = { "Wind", "Water" };
     private string[] foliageTypes = { "Needles", "Leaves" };
     private string[] waterTypes = { "Flow", "Drinking Fountain", "Splashing Fountain" };
 
-    // Original definitions kept the same, but logic below is changed.
     private string[] windChannelOptions = { "Stereo channel 1", "Stereo channel 2", "Stereo channel 3", "Stereo channel 4" };
     private string[] waterChannelOptions = { "Stereo channel 5", "Stereo channel 6", "Stereo channel 7", "Stereo channel 8" };
 
@@ -36,9 +38,12 @@ public class SoundSourceGeneratorEditor : Editor
         size = serializedObject.FindProperty("size");
         sourceSelectionProp = serializedObject.FindProperty("sourceSelectionIndex");
 
+        // Assign new properties
+        splashingTime = serializedObject.FindProperty("splashingTime");
+        splashingBreak = serializedObject.FindProperty("splashingBreak");
+
         targetsList = targets.Cast<SoundSourceGenerator>().ToArray();
 
-        // Register current assignments in SourceSelectionManager (if not already)
         foreach (var t in targetsList)
         {
             string st = "stereo";
@@ -78,15 +83,33 @@ public class SoundSourceGeneratorEditor : Editor
         {
             DrawFoliageTypeDropdown();
             DrawLeavesTreeSizeSlider();
-            // Now Wind uses water channel mapping
             DrawChannelSelection(true);
         }
         else if (selectedGeneratorTypeIndex.intValue == 1) // Water
         {
             DrawWaterTypeDropdown();
             DrawSizeSlider();
-            // Now Water uses wind channel mapping
             DrawChannelSelection(false);
+
+            // Show splashingTime and splashingBreak if Splashes (index=2) is selected
+            if (!selectedWaterTypeIndex.hasMultipleDifferentValues && selectedWaterTypeIndex.intValue == 2)
+            {
+                EditorGUI.showMixedValue = splashingTime.hasMultipleDifferentValues;
+                float newSplashingTime = EditorGUILayout.Slider("Splashing Time", splashingTime.floatValue, 0.0f, 10.0f);
+                if (!Mathf.Approximately(newSplashingTime, splashingTime.floatValue))
+                {
+                    splashingTime.floatValue = newSplashingTime;
+                }
+                EditorGUI.showMixedValue = false;
+
+                EditorGUI.showMixedValue = splashingBreak.hasMultipleDifferentValues;
+                float newSplashingBreak = EditorGUILayout.Slider("Splashing Break", splashingBreak.floatValue, 0.0f, 10.0f);
+                if (!Mathf.Approximately(newSplashingBreak, splashingBreak.floatValue))
+                {
+                    splashingBreak.floatValue = newSplashingBreak;
+                }
+                EditorGUI.showMixedValue = false;
+            }
         }
 
         serializedObject.ApplyModifiedProperties();
@@ -151,16 +174,11 @@ public class SoundSourceGeneratorEditor : Editor
     {
         string sourceType = "stereo";
 
-        // Gather current selections
         int[] selections = targetsList.Select(t => t.SourceSelectionIndex).ToArray();
         bool multipleValues = selections.Distinct().Count() > 1;
         EditorGUI.showMixedValue = multipleValues;
 
         int currentSelection = selections[0];
-
-        // Swapped logic: 
-        // Wind now uses what used to be water channels (5–8)
-        // Water now uses what used to be wind channels (1–4)
         string[] options = isWind ? waterChannelOptions : windChannelOptions;
 
         int displayIndex;
@@ -175,24 +193,20 @@ public class SoundSourceGeneratorEditor : Editor
             displayIndex = currentSelection;
         }
 
-        // Ensure display index is within valid range
         if (displayIndex < 0 || displayIndex >= options.Length) displayIndex = 0;
 
         int newDisplayIndex = EditorGUILayout.Popup("Channel", displayIndex, options);
         EditorGUI.showMixedValue = false;
 
-        // If user didn't change selection, do nothing
         if (newDisplayIndex == displayIndex) return;
 
         int newSelection = isWind ? (newDisplayIndex + 4) : newDisplayIndex;
 
-        // Process each selected target
         foreach (var targetObj in targetsList)
         {
             var t = targetObj;
             int oldSelection = t.SourceSelectionIndex;
 
-            // Unassign old selection
             if (SourceSelectionManager.IsSourceTaken(sourceType, oldSelection))
             {
                 var assignedObj = SourceSelectionManager.GetAssignedObject(sourceType, oldSelection);
@@ -202,20 +216,16 @@ public class SoundSourceGeneratorEditor : Editor
                 }
             }
 
-            // If new slot is taken, attempt a swap
             if (SourceSelectionManager.IsSourceTaken(sourceType, newSelection))
             {
                 var otherObj = SourceSelectionManager.GetAssignedObject(sourceType, newSelection);
                 if (otherObj != null && otherObj != t && otherObj is SoundSourceGenerator otherGen)
                 {
-                    // Unassign the currently taken slot
                     SourceSelectionManager.UnassignSource(sourceType, newSelection);
 
-                    // Assign current object to new slot
                     t.SourceSelectionIndex = newSelection;
                     SourceSelectionManager.AssignSource(sourceType, newSelection, t);
 
-                    // The other object takes the old slot
                     if (oldSelection != newSelection)
                     {
                         otherGen.SourceSelectionIndex = oldSelection;
@@ -227,7 +237,6 @@ public class SoundSourceGeneratorEditor : Editor
                 }
                 else
                 {
-                    // If taken by null or the same object, just reassign
                     t.SourceSelectionIndex = newSelection;
                     SourceSelectionManager.AssignSource(sourceType, newSelection, t);
                     EditorUtility.SetDirty(t);
@@ -235,7 +244,6 @@ public class SoundSourceGeneratorEditor : Editor
             }
             else
             {
-                // Not taken: simply assign
                 t.SourceSelectionIndex = newSelection;
                 SourceSelectionManager.AssignSource(sourceType, newSelection, t);
                 EditorUtility.SetDirty(t);

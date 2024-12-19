@@ -19,9 +19,11 @@ public class SoundSourceGenerator : SoundSource
     public int selectedWaterTypeIndex = 0;
     public float size = 1.0f;
 
-    // The channel index assigned to this generator:
-    // Wind: 0-3 -> Channels 1-4
-    // Water: 4-7 -> Channels 5-8
+    // **New fields for Splashing Fountain**
+    // Will only be relevant if selectedWaterTypeIndex == 2 (Splashing Fountain)
+    public float splashingTime = 5.0f;  // Default value
+    public float splashingBreak = 0.0f; // Default value
+
     [SerializeField, HideInInspector]
     private int sourceSelection = 0;
 
@@ -43,6 +45,8 @@ public class SoundSourceGenerator : SoundSource
     private int lastSentSelectedFoliageTypeIndex;
     private float lastSentLeavesTreeSize;
     private int lastSentSelectedWaterTypeIndex;
+    private float lastSentSplashingTime;
+    private float lastSentSplashingBreak;
     private float lastSentSize;
     private float lastSentForestWidth;
     private Vector3 lastSentForestCenter;
@@ -83,6 +87,8 @@ public class SoundSourceGenerator : SoundSource
         lastSentSelectedFoliageTypeIndex = -1;
         lastSentLeavesTreeSize = float.MinValue;
         lastSentSelectedWaterTypeIndex = -1;
+        lastSentSplashingTime = float.MinValue;
+        lastSentSplashingBreak = float.MinValue;
         lastSentSize = float.MinValue;
         lastSentForestWidth = 0f;
         lastSentForestCenter = Vector3.zero;
@@ -120,7 +126,7 @@ public class SoundSourceGenerator : SoundSource
         }
         else
         {
-           base.CalculateRelativePosition();
+            base.CalculateRelativePosition();
         }
     }
 
@@ -275,6 +281,35 @@ public class SoundSourceGenerator : SoundSource
                 message.values.Add(size);
                 osc.Send(message);
                 lastSentSize = size;
+            }
+
+            // Optionally, if you want to send splashingTime and splashingBreak parameters via OSC
+            // if the type is splashing fountain (2), do it here:
+            if (selectedWaterTypeIndex == 2)
+            {
+                if (!Mathf.Approximately(splashingTime, lastSentSplashingTime) || selectedGeneratorTypeIndex != lastSentSelectedGeneratorTypeIndex)
+                {
+                    // Send splashingTime
+                    var timeMessage = new OscMessage
+                    {
+                        address = $"{source}/water/{customSourceValue}/splashingtiming"
+                    };
+                    timeMessage.values.Add(splashingTime);
+                    osc.Send(timeMessage);
+                    lastSentSplashingTime = splashingTime;
+                }
+
+                if (!Mathf.Approximately(splashingBreak, lastSentSplashingBreak) || selectedGeneratorTypeIndex != lastSentSelectedGeneratorTypeIndex)
+                {
+                    // Send splashingBreak
+                    var breakMessage = new OscMessage
+                    {
+                        address = $"{source}/water/{customSourceValue}/splashingbreak"
+                    };
+                    breakMessage.values.Add(splashingBreak);
+                    osc.Send(breakMessage);
+                    lastSentSplashingBreak = splashingBreak;
+                }
             }
         }
 
