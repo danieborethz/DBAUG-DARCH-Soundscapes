@@ -30,12 +30,12 @@ public class SoundSourceGenerator : SoundSource
     protected override float MultiSize => 1.0f;
     protected override List<ParameterValue> ParameterValues => null;
 
-    private GameObject debugMesh;
     private MeshFilter meshFilter;
     private MeshCollider meshCollider;
     private Bounds combinedBounds;
     private float forestWidth;
     private Vector3 forestCenter;
+    private Vector3 flowWaterCenter;
 
     // Last sent values for OSC
     private bool lastSentEnableGenerator;
@@ -46,6 +46,7 @@ public class SoundSourceGenerator : SoundSource
     private float lastSentSize;
     private float lastSentForestWidth;
     private Vector3 lastSentForestCenter;
+    private Vector3 lastSentFlowWaterCenter;
 
     public int SourceSelectionIndex
     {
@@ -61,15 +62,6 @@ public class SoundSourceGenerator : SoundSource
     protected override void Start()
     {
         base.Start();
-
-        GameObject[] allObjects = FindObjectsOfType<GameObject>();
-        foreach (GameObject obj in allObjects)
-        {
-            if (obj.layer == 3) // Assuming layer 3 is the debug mesh
-            {
-                debugMesh = obj;
-            }
-        }
 
         meshFilter = GetComponent<MeshFilter>();
         if (meshFilter != null)
@@ -120,7 +112,11 @@ public class SoundSourceGenerator : SoundSource
     {
         if (selectedGeneratorTypeIndex == 0 && SceneManager.Instance.EnableWind)
         {
-            relativePosition = forestCenter;
+            relativePosition = forestCenter - mainCamera.transform.position;
+        }
+        else if (selectedGeneratorTypeIndex == 1 && selectedWaterTypeIndex == 0)
+        {
+            relativePosition = flowWaterCenter;
         }
         else
         {
@@ -178,13 +174,15 @@ public class SoundSourceGenerator : SoundSource
     {
         base.Update();
 
-        if (selectedGeneratorTypeIndex == 1 && (selectedWaterTypeIndex == 0 || selectedWaterTypeIndex == 5) && SceneManager.Instance.EnableWater)
+        if (selectedGeneratorTypeIndex == 1 && selectedWaterTypeIndex == 0 && SceneManager.Instance.EnableWater)
         {
-            if (meshCollider != null && mainCamera != null && debugMesh != null)
+            if (meshCollider != null && mainCamera != null)
             {
                 Vector3 cameraPosition = mainCamera.transform.position;
                 Vector3 closestPoint = Physics.ClosestPoint(cameraPosition, meshCollider, meshCollider.transform.position, meshCollider.transform.rotation);
-                debugMesh.transform.position = closestPoint;
+
+                flowWaterCenter = closestPoint - cameraPosition;
+                Debug.Log(flowWaterCenter);
             }
         }
     }
@@ -198,7 +196,7 @@ public class SoundSourceGenerator : SoundSource
         string source = $"/source/generator";
 
         var genType = (selectedGeneratorTypeIndex == 0) ? "wind" : "water";
-        var customSourceValue = (selectedGeneratorTypeIndex == 0) ? SourceSelection + 1 : SourceSelection - 3;
+        var customSourceValue = (selectedGeneratorTypeIndex == 0) ? SourceSelection - 3 : SourceSelection + 1;
 
         // Always send status if changed
         if (lastSentEnableGenerator != enableGenerator)
