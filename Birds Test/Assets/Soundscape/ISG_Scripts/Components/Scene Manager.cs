@@ -278,4 +278,12 @@ public class SceneManager : MonoBehaviour
             Debug.LogError("Cache file not found at: " + cacheFilePath);
         }
     }
+
+    private void OnApplicationQuit()
+    {
+        if (osc == null) return;
+        OscMessage message = new OscMessage { address = "/master/stop" };
+        message.values.Add(0);
+        osc.Send(message);
+    }
 }
