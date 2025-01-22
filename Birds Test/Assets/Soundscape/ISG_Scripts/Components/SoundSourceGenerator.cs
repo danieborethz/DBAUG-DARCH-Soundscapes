@@ -199,12 +199,17 @@ public class SoundSourceGenerator : SoundSource
 
         if (osc == null) return;
 
-        string source = $"/source/generator";
+        // All generators use the same base address.
+        string source = "/source/generator";
 
+        // We now unify source indices to 0..3 in code, and map them to 1..4 in OSC.
+        int customSourceValue = SourceSelectionIndex + 1;
+
+        // Determine whether we're sending "wind" or "water".
         var genType = (selectedGeneratorTypeIndex == 0) ? "wind" : "water";
-        var customSourceValue = (selectedGeneratorTypeIndex == 0) ? SourceSelection - 3 : SourceSelection + 1;
+        Debug.Log($"{genType} {customSourceValue}");
 
-        // Always send status if changed
+        // Send enable/disable status if it changed.
         if (lastSentEnableGenerator != enableGenerator)
         {
             var statusMessage = new OscMessage
@@ -216,13 +221,17 @@ public class SoundSourceGenerator : SoundSource
             lastSentEnableGenerator = enableGenerator;
         }
 
+        // If the generator is disabled, exit early.
         if (!enableGenerator) return;
 
-        // Wind
+        // ---------------------------
+        //        WIND
+        // ---------------------------
         if (selectedGeneratorTypeIndex == 0)
         {
             // Foliage type
-            if (selectedFoliageTypeIndex != lastSentSelectedFoliageTypeIndex || selectedGeneratorTypeIndex != lastSentSelectedGeneratorTypeIndex)
+            if (selectedFoliageTypeIndex != lastSentSelectedFoliageTypeIndex ||
+                selectedGeneratorTypeIndex != lastSentSelectedGeneratorTypeIndex)
             {
                 var message = new OscMessage
                 {
@@ -233,8 +242,9 @@ public class SoundSourceGenerator : SoundSource
                 lastSentSelectedFoliageTypeIndex = selectedFoliageTypeIndex;
             }
 
-            // Leaves tree size
-            if (!Mathf.Approximately(leavesTreeSize, lastSentLeavesTreeSize) || selectedGeneratorTypeIndex != lastSentSelectedGeneratorTypeIndex)
+            // Leaves/tree size
+            if (!Mathf.Approximately(leavesTreeSize, lastSentLeavesTreeSize) ||
+                selectedGeneratorTypeIndex != lastSentSelectedGeneratorTypeIndex)
             {
                 var message = new OscMessage
                 {
@@ -245,22 +255,30 @@ public class SoundSourceGenerator : SoundSource
                 lastSentLeavesTreeSize = leavesTreeSize;
             }
 
-            // Single/forest
-            if (!Mathf.Approximately(forestWidth, lastSentForestWidth) || selectedGeneratorTypeIndex != lastSentSelectedGeneratorTypeIndex)
+            // Forest width (if multiple child objects form a large area)
+            if (!Mathf.Approximately(forestWidth, lastSentForestWidth) ||
+                selectedGeneratorTypeIndex != lastSentSelectedGeneratorTypeIndex)
             {
                 var message = new OscMessage
                 {
                     address = $"{source}/wind/{customSourceValue}/width"
                 };
-                message.values.Add((forestWidth > 0) ? MapValue(forestWidth, 1f, 100f, 1f, 10f) : 0);
+                // Map forestWidth to a smaller range for OSC.
+                message.values.Add((forestWidth > 0)
+                    ? MapValue(forestWidth, 1f, 100f, 1f, 10f)
+                    : 0);
                 osc.Send(message);
                 lastSentForestWidth = forestWidth;
             }
         }
+        // ---------------------------
+        //        WATER
+        // ---------------------------
         else if (selectedGeneratorTypeIndex == 1)
         {
-            // Water
-            if (selectedWaterTypeIndex != lastSentSelectedWaterTypeIndex || selectedGeneratorTypeIndex != lastSentSelectedGeneratorTypeIndex)
+            // Water type (Flow, Drinking Fountain, Splashing Fountain)
+            if (selectedWaterTypeIndex != lastSentSelectedWaterTypeIndex ||
+                selectedGeneratorTypeIndex != lastSentSelectedGeneratorTypeIndex)
             {
                 var message = new OscMessage
                 {
@@ -272,7 +290,8 @@ public class SoundSourceGenerator : SoundSource
             }
 
             // Water size
-            if (!Mathf.Approximately(size, lastSentSize) || selectedGeneratorTypeIndex != lastSentSelectedGeneratorTypeIndex)
+            if (!Mathf.Approximately(size, lastSentSize) ||
+                selectedGeneratorTypeIndex != lastSentSelectedGeneratorTypeIndex)
             {
                 var message = new OscMessage
                 {
@@ -283,13 +302,13 @@ public class SoundSourceGenerator : SoundSource
                 lastSentSize = size;
             }
 
-            // Optionally, if you want to send splashingTime and splashingBreak parameters via OSC
-            // if the type is splashing fountain (2), do it here:
+            // Additional OSC parameters for "Splashing Fountain" (index=2)
             if (selectedWaterTypeIndex == 2)
             {
-                if (!Mathf.Approximately(splashingTime, lastSentSplashingTime) || selectedGeneratorTypeIndex != lastSentSelectedGeneratorTypeIndex)
+                // splashingTime
+                if (!Mathf.Approximately(splashingTime, lastSentSplashingTime) ||
+                    selectedGeneratorTypeIndex != lastSentSelectedGeneratorTypeIndex)
                 {
-                    // Send splashingTime
                     var timeMessage = new OscMessage
                     {
                         address = $"{source}/water/{customSourceValue}/splashingtiming"
@@ -299,9 +318,10 @@ public class SoundSourceGenerator : SoundSource
                     lastSentSplashingTime = splashingTime;
                 }
 
-                if (!Mathf.Approximately(splashingBreak, lastSentSplashingBreak) || selectedGeneratorTypeIndex != lastSentSelectedGeneratorTypeIndex)
+                // splashingBreak
+                if (!Mathf.Approximately(splashingBreak, lastSentSplashingBreak) ||
+                    selectedGeneratorTypeIndex != lastSentSelectedGeneratorTypeIndex)
                 {
-                    // Send splashingBreak
                     var breakMessage = new OscMessage
                     {
                         address = $"{source}/water/{customSourceValue}/splashingbreak"
@@ -313,12 +333,13 @@ public class SoundSourceGenerator : SoundSource
             }
         }
 
-        // Update last sent generator type
+        // Update our cached generator type so we know if it changes next time.
         if (selectedGeneratorTypeIndex != lastSentSelectedGeneratorTypeIndex)
         {
             lastSentSelectedGeneratorTypeIndex = selectedGeneratorTypeIndex;
         }
     }
+
 
     private float MapValue(float value, float inMin, float inMax, float outMin, float outMax)
     {
