@@ -20,6 +20,19 @@ public class SceneManager : MonoBehaviour
     [SerializeField]
     private bool enableWater = true;
 
+    // Add these parameters for when the player is not inside any local zone
+    [Range(10f, 50000f)]
+    public float globalRoomSize = 50f;
+
+    [Range(0f, 3f)]
+    public float globalDecayTime = 2f;
+
+    [Range(0f, 1f)]
+    public float globalWetDryMix = 1f;
+
+    [Range(0f, -20f)]
+    public float globalEq = -10f;
+
     [Header("Audio Settings")]
     [SerializeField]
     [HideInInspector] // Hide from default inspector so we can show a dropdown instead
@@ -263,7 +276,8 @@ public class SceneManager : MonoBehaviour
             string json = File.ReadAllText(cacheFilePath);
             audioLibrary = JsonUtility.FromJson<AudioLibrary>(json);
 
-            var ambisonicsCategory = audioLibrary.categories.FirstOrDefault(c => string.Equals(c.categoryName, "ambisonics", StringComparison.OrdinalIgnoreCase));
+            var ambisonicsCategory = audioLibrary.categories.FirstOrDefault(c =>
+                string.Equals(c.categoryName, "ambisonics", StringComparison.OrdinalIgnoreCase));
             if (ambisonicsCategory != null)
             {
                 ambisonicAudioItems = ambisonicsCategory.audioItems;

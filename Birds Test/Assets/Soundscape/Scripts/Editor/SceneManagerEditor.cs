@@ -10,6 +10,12 @@ public class SceneManagerEditor : Editor
     private SerializedProperty enableWindProp;
     private SerializedProperty enableWaterProp;
 
+    // NEW: references to the global reverb parameters
+    private SerializedProperty globalRoomSizeProp;
+    private SerializedProperty globalDecayTimeProp;
+    private SerializedProperty globalWetDryMixProp;
+    private SerializedProperty globalEqProp;
+
     private SerializedProperty selectedAmbisonicIndexProp;
     private SerializedProperty ambientSoundFileProp;
     private SceneManager sceneManager;
@@ -24,12 +30,17 @@ public class SceneManagerEditor : Editor
         distanceScaleProp = serializedObject.FindProperty("distanceScale");
         enableWindProp = serializedObject.FindProperty("enableWind");
         enableWaterProp = serializedObject.FindProperty("enableWater");
-        selectedAmbisonicIndexProp = serializedObject.FindProperty("selectedAmbisonicIndex");
 
+        // NEW: find global reverb properties
+        globalRoomSizeProp = serializedObject.FindProperty("globalRoomSize");
+        globalDecayTimeProp = serializedObject.FindProperty("globalDecayTime");
+        globalWetDryMixProp = serializedObject.FindProperty("globalWetDryMix");
+        globalEqProp = serializedObject.FindProperty("globalEq");
+
+        selectedAmbisonicIndexProp = serializedObject.FindProperty("selectedAmbisonicIndex");
         ambientSoundFileProp = serializedObject.FindProperty("ambientSoundFile");
 
         sceneManager.LoadAudioLibrary();
-
         UpdateAmbisonicAudioNames();
     }
 
@@ -42,6 +53,14 @@ public class SceneManagerEditor : Editor
         EditorGUILayout.PropertyField(windIntensityProp);
         EditorGUILayout.PropertyField(distanceScaleProp);
 
+        // Show the Global Reverb Parameters
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Global Reverb Parameters", EditorStyles.boldLabel);
+        EditorGUILayout.PropertyField(globalRoomSizeProp);
+        EditorGUILayout.PropertyField(globalDecayTimeProp);
+        EditorGUILayout.PropertyField(globalWetDryMixProp);
+        EditorGUILayout.PropertyField(globalEqProp);
+
         EditorGUILayout.Space();
         // Draw the ambisonic dropdown if available
         if (sceneManager.ambisonicAudioItems != null && sceneManager.ambisonicAudioItems.Count > 0)
@@ -53,7 +72,6 @@ public class SceneManagerEditor : Editor
             if (newIndex != currentIndex && newIndex >= 0 && newIndex < ambisonicAudioNames.Length)
             {
                 selectedAmbisonicIndexProp.intValue = newIndex;
-                // Set via the serialized property
                 ambientSoundFileProp.stringValue = sceneManager.ambisonicAudioItems[newIndex].audioFilePath;
             }
         }
