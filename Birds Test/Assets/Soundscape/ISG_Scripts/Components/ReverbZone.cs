@@ -4,7 +4,6 @@ using UnityEngine;
 public class ReverbZone : MonoBehaviour
 {
     [Header("Audio Parameters")]
-
     [Range(10f, 50000f)]
     public float RoomSize = 10f;
 
@@ -18,56 +17,71 @@ public class ReverbZone : MonoBehaviour
     public float Eq = 0f;
 
     [Header("Zone Settings")]
+    // Defines the "half-size" of the ellipsoid along each axis for the weighting calculation.
     public Vector3 radii = Vector3.one;
 
+    // The extra distance (beyond the ellipsoid boundary at distance=1) over which reverb fades to 0.
+    [Range(0f, 5f)]
+    public float fadeRadius = 1f;
+
     [Header("Visualization Settings")]
+    // If true, we'll show a simple mesh in-game. Otherwise it's typically for Editor-only viewing.
     public bool showInGame = false;
 
     private Mesh sphereMesh;
     private MeshRenderer meshRenderer;
+    private MeshFilter meshFilter;
     private MeshCollider meshCollider;
     private Material zoneMaterial;
 
     private void Awake()
     {
         InitializeComponents();
+        // We do NOT set transform.localScale = radii * 2f here. We keep localScale = (1,1,1).
         UpdateVisuals();
     }
 
     private void OnValidate()
     {
         InitializeComponents();
-        UpdateCollider();
         UpdateVisuals();
     }
 
+    /// <summary>
+    /// Creates/Assigns the mesh, renderer, and collider if missing.
+    /// These are optional for simple visualization/triggers.
+    /// </summary>
     private void InitializeComponents()
     {
-        // Load the sphere mesh if not already loaded
+        // Try to load a built-in Unity sphere mesh
         if (sphereMesh == null)
         {
             sphereMesh = Resources.GetBuiltinResource<Mesh>("New-Sphere.fbx");
             if (sphereMesh == null)
             {
-                // Fallback: create a primitive sphere and extract its mesh
+                // Fallback if builtin mesh not found
                 GameObject tempSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
                 sphereMesh = tempSphere.GetComponent<MeshFilter>().sharedMesh;
                 DestroyImmediate(tempSphere);
             }
         }
 
-        // Ensure there is a MeshFilter and MeshRenderer for visual representation
-        if (GetComponent<MeshFilter>() == null)
-            gameObject.AddComponent<MeshFilter>().sharedMesh = sphereMesh;
-        else
-            GetComponent<MeshFilter>().sharedMesh = sphereMesh;
+        // MeshFilter
+        meshFilter = GetComponent<MeshFilter>();
+        if (meshFilter == null)
+        {
+            meshFilter = gameObject.AddComponent<MeshFilter>();
+        }
+        meshFilter.sharedMesh = sphereMesh;
 
-        if (GetComponent<MeshRenderer>() == null)
+        // MeshRenderer
+        meshRenderer = GetComponent<MeshRenderer>();
+        if (meshRenderer == null)
+        {
             meshRenderer = gameObject.AddComponent<MeshRenderer>();
-        else
-            meshRenderer = GetComponent<MeshRenderer>();
+        }
 
-        // Set up the material if not already set
+        // Simple semi-transparent material
         if (zoneMaterial == null)
         {
             zoneMaterial = new Material(Shader.Find("Standard"));
@@ -79,43 +93,27 @@ public class ReverbZone : MonoBehaviour
             zoneMaterial.DisableKeyword("_ALPHATEST_ON");
             zoneMaterial.EnableKeyword("_ALPHABLEND_ON");
             zoneMaterial.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-            zoneMaterial.renderQueue = 3000;
+            zoneMaterial.renderQueue = 3000; // Transparent queue
         }
         meshRenderer.sharedMaterial = zoneMaterial;
 
-        // Ensure there is a MeshCollider for the trigger zone
-        if (GetComponent<MeshCollider>() == null)
+        // Optional MeshCollider (Trigger)
+        meshCollider = GetComponent<MeshCollider>();
+        if (meshCollider == null)
         {
             meshCollider = gameObject.AddComponent<MeshCollider>();
-            meshCollider.sharedMesh = sphereMesh;
-            meshCollider.convex = true;
-            meshCollider.isTrigger = true;
         }
-        else
-        {
-            meshCollider = GetComponent<MeshCollider>();
-            meshCollider.sharedMesh = sphereMesh;
-            meshCollider.convex = true;
-            meshCollider.isTrigger = true;
-        }
+        meshCollider.sharedMesh = sphereMesh;
+        meshCollider.convex = true;
+        meshCollider.isTrigger = true;
     }
 
-    private void UpdateCollider()
+    /// <summary>
+    /// This is for any visual tweaks, e.g., toggling renderer in play mode.
+    /// Note that we do NOT scale the transform based on 'radii' here.
+    /// </summary>
+    private void UpdateVisuals()
     {
-        // MeshCollider will automatically use the transform's scale
-        if (meshCollider != null)
-        {
-            meshCollider.sharedMesh = sphereMesh;
-            meshCollider.convex = true;
-            meshCollider.isTrigger = true;
-        }
-    }
-
-    public void UpdateVisuals()
-    {
-        // Update the transform scale based on the radii
-        transform.localScale = Vector3.Max(radii * 2f, Vector3.one * 0.01f); // Prevent zero or negative scale
-
         UpdateVisibility();
     }
 
@@ -123,28 +121,61 @@ public class ReverbZone : MonoBehaviour
     {
         if (meshRenderer != null)
         {
+            // Show the mesh if showInGame is true, or if we're in Editor mode (not playing)
             meshRenderer.enabled = showInGame || !Application.isPlaying;
         }
     }
 
     private void Update()
     {
-        // Keep updating the visuals in Edit Mode
+        // Update visuals in edit mode
         if (!Application.isPlaying)
         {
             UpdateVisuals();
         }
     }
 
+    /// <summary>
+    /// Draw ellipsoid & fade region in the Scene view for clarity.
+    /// The transform itself remains unscaled (scale=(1,1,1)).
+    /// </summary>
     private void OnDrawGizmos()
     {
-        // Draw a wireframe sphere to represent the zone
-        Gizmos.color = new Color(0, 1, 1, 0.5f); // Semi-transparent cyan
+        // Core ellipsoid boundary => distance=1 in 'normalized' space
+        // We'll draw as a wireframe, color cyan
+        Gizmos.color = new Color(0, 1, 1, 0.5f);
+
+        // Construct a matrix to position/orient/scale the gizmo
+        // The "core" boundary has scale = (2*radii)
         Matrix4x4 oldMatrix = Gizmos.matrix;
-
-        Gizmos.matrix = transform.localToWorldMatrix;
-        Gizmos.DrawWireSphere(Vector3.zero, 0.5f); // Sphere of radius 0.5
-
+        Matrix4x4 coreMatrix = Matrix4x4.TRS(
+            transform.position,
+            transform.rotation,
+            radii * 2f // diameter
+        );
+        Gizmos.matrix = coreMatrix;
+        // The base sphere is radius=0.5 in local coords => becomes an ellipsoid
+        Gizmos.DrawWireSphere(Vector3.zero, 0.5f);
         Gizmos.matrix = oldMatrix;
+
+        // If fadeRadius>0, draw a second boundary for the outer fade region
+        if (fadeRadius > 0f)
+        {
+            // color red for outer boundary
+            Gizmos.color = new Color(1, 0, 0, 0.5f);
+
+            float fadeScale = 1f + fadeRadius; // if distance=1 is boundary, 1+fadeRadius is outer
+            // e.g., if fadeRadius=1, outer boundary is distance=2 in normalized coords
+            Vector3 outerDiameter = radii * 2f * fadeScale;
+
+            Matrix4x4 fadeMatrix = Matrix4x4.TRS(
+                transform.position,
+                transform.rotation,
+                outerDiameter
+            );
+            Gizmos.matrix = fadeMatrix;
+            Gizmos.DrawWireSphere(Vector3.zero, 0.5f);
+            Gizmos.matrix = oldMatrix;
+        }
     }
 }

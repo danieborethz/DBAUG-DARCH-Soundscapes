@@ -68,7 +68,7 @@ public class ReverbZoneEditor : Editor
                 Mathf.Max(newRadiusZ, 0.01f)
             );
 
-            zone.UpdateVisuals();
+           // zone.UpdateVisuals();
             EditorUtility.SetDirty(zone);
         }
     }

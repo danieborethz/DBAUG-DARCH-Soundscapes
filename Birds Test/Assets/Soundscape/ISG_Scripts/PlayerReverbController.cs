@@ -1,15 +1,13 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerReverbController : MonoBehaviour
 {
-
-    // List of ReverbZones the player is currently inside
-    private List<ReverbZone> overlappingZones = new List<ReverbZone>();
+    private ReverbZone[] allReverbZones;  // All zones in the scene
 
     protected OSC osc;
 
+    // Accumulated reverb parameters
     private float accumulatedRoomSize = 0f;
     private float lastSentAccumulatedRoomSize = 0f;
 
@@ -20,55 +18,44 @@ public class PlayerReverbController : MonoBehaviour
     private float lastSentAccumulatedWetDryMix = 0f;
 
     private float accumulatedEq = 0f;
-    private float lastAccumulatedEQ = 0f;
+    private float lastSentAccumulatedEq = 0f;
+
+    private SceneManager sceneManager;
 
     private void Start()
     {
+        // Find references
         osc = FindObjectOfType<OSC>();
+        sceneManager = SceneManager.Instance;
+
+        // Grab all ReverbZones in the scene
+        allReverbZones = FindObjectsOfType<ReverbZone>();
     }
 
-    void Update()
+    private void Update()
     {
-        if (overlappingZones.Count > 0)
-        {
-            // Calculate interpolated parameters
-            InterpolateAndLogParameters();
-            SendChangedMessages();
-        }
-    }
+        // Blend parameters from all zones
+        InterpolateAndLogParameters();
 
-    private void OnTriggerEnter(Collider other)
-    {
-        ReverbZone zone = other.GetComponent<ReverbZone>();
-        if (zone != null && !overlappingZones.Contains(zone))
-        {
-            overlappingZones.Add(zone);
-        }
-    }
-
-    private void OnTriggerExit(Collider other)
-    {
-        ReverbZone zone = other.GetComponent<ReverbZone>();
-        if (zone != null && overlappingZones.Contains(zone))
-        {
-            overlappingZones.Remove(zone);
-        }
+        // Send changes via OSC if needed
+        SendChangedMessages();
     }
 
     private void InterpolateAndLogParameters()
     {
-        // Initialize accumulators
         float totalWeight = 0f;
+
+        // Reset accumulators
         accumulatedRoomSize = 0f;
-        accumulatedDecayTime = 0f;     
+        accumulatedDecayTime = 0f;
         accumulatedWetDryMix = 0f;
         accumulatedEq = 0f;
 
-        // Loop through overlapping zones
-        foreach (ReverbZone zone in overlappingZones)
+        // For each zone, compute how much it contributes
+        foreach (ReverbZone zone in allReverbZones)
         {
-            // Calculate weight based on player's position within the zone
             float weight = CalculateZoneWeight(zone);
+            if (weight <= 0f) continue;
 
             totalWeight += weight;
             accumulatedRoomSize += zone.RoomSize * weight;
@@ -77,88 +64,110 @@ public class PlayerReverbController : MonoBehaviour
             accumulatedEq += zone.Eq * weight;
         }
 
-        if (totalWeight > 0f)
-        {
-            // Normalize accumulations
-            accumulatedRoomSize = accumulatedRoomSize / totalWeight;
-            accumulatedDecayTime = accumulatedDecayTime / totalWeight;
-            accumulatedWetDryMix = accumulatedWetDryMix / totalWeight;
-            accumulatedEq = accumulatedEq / totalWeight;
+        float weightDifference = 1.0f - totalWeight;
+        accumulatedRoomSize += sceneManager.globalRoomSize * weightDifference;
+        accumulatedDecayTime += sceneManager.globalDecayTime * weightDifference;
+        accumulatedWetDryMix += sceneManager.globalWetDryMix * weightDifference;
+        accumulatedEq += sceneManager.globalEq * weightDifference;
 
-            // Log the interpolated values
-            //Debug.Log($"Interpolated Parameters - RoomSize: {accumulatedRoomSize}, DecayTime: {accumulatedDecayTime}, WetDryMix: {accumulatedWetDryMix}, Eq: {accumulatedEq}");
+        // If total weight is zero => fallback to global reverb
+        /*if (Mathf.Approximately(totalWeight, 0f))
+        {
+            accumulatedRoomSize = sceneManager.globalRoomSize;
+            accumulatedDecayTime = sceneManager.globalDecayTime;
+            accumulatedWetDryMix = sceneManager.globalWetDryMix;
+            accumulatedEq = sceneManager.globalEq;
         }
+        else
+        {
+            // Normalize final values
+            accumulatedRoomSize /= totalWeight;
+            accumulatedDecayTime /= totalWeight;
+            accumulatedWetDryMix /= totalWeight;
+            accumulatedEq /= totalWeight;
+        }*/
+
+        Debug.Log("Room size: " + accumulatedRoomSize);
+        Debug.Log("Decaytime: " + accumulatedDecayTime);
+        Debug.Log("Mix: " + accumulatedWetDryMix);
+        Debug.Log("EQ: " + accumulatedEq);
     }
 
     private float CalculateZoneWeight(ReverbZone zone)
     {
-        // Transform the player's position into the zone's local space
-        Vector3 localPosition = zone.transform.InverseTransformPoint(transform.position);
+        // 1) Transform the player's position into the zone's local space
+        Vector3 localPos = zone.transform.InverseTransformPoint(transform.position);
 
-        // Normalize the local position based on the zone's radii
-        Vector3 normalizedPosition = new Vector3(
-            localPosition.x / zone.radii.x,
-            localPosition.y / zone.radii.y,
-            localPosition.z / zone.radii.z
+        // 2) Normalize the local position using the zone's radii
+        Vector3 normalizedPos = new Vector3(
+            localPos.x / zone.radii.x,
+            localPos.y / zone.radii.y,
+            localPos.z / zone.radii.z
         );
 
-        // Calculate the distance from the center in normalized space
-        float distance = normalizedPosition.magnitude;
+        // 3) distance=1 means exactly on the zone boundary. 
+        //    distance>1 is outside the zone. 
+        float distance = normalizedPos.magnitude;
+       // Debug.Log(distance);
 
-        // Calculate weight based on distance (closer to center = higher weight)
-        float weight = Mathf.Clamp01(1f - distance);
+        // 4) Incorporate fadeRadius:
+        //    If distance >= 1 + fadeRadius => weight=0
+        float outerBoundary = 1f + zone.fadeRadius;
+        if (distance >= outerBoundary)
+        {
+            return 0f;
+        }
 
-        return weight;
+        // If within the inner boundary (distance <= 1.0) => full weight
+        if (distance <= 1f)
+        {
+            return 1f;
+        }
+
+        // Otherwise, we are between 1 and (1+fadeRadius):
+        // weight linearly decreases from 1 -> 0 across that range
+        float fadeDist = distance - 1f;            // how far beyond the inner boundary
+        float fadeRange = zone.fadeRadius;         // total fade distance
+        float fadeFactor = 1f - (fadeDist / fadeRange); // linear ramp from 1 down to 
+        return Mathf.Clamp01(fadeFactor);
     }
 
     private void SendChangedMessages()
     {
         if (osc == null) return;
 
-        if (Math.Abs(lastSentAccumulatedRoomSize - accumulatedRoomSize) > Mathf.Epsilon)
+        // Compare with last sent values; send if changed
+
+        if (!Mathf.Approximately(lastSentAccumulatedRoomSize, accumulatedRoomSize))
         {
-            OscMessage message = new OscMessage
-            {
-                address = "/reverb/roomsize"
-            };
-            message.values.Add(accumulatedRoomSize);
-            osc.Send(message);
-            Debug.Log("Message send with value " + accumulatedRoomSize);
+            OscMessage msg = new OscMessage { address = "/reverb/roomsize" };
+            msg.values.Add(accumulatedRoomSize);
+            osc.Send(msg);
             lastSentAccumulatedRoomSize = accumulatedRoomSize;
         }
 
-        if (Math.Abs(lastSentAccumulatedDecayTime - accumulatedDecayTime) > Mathf.Epsilon)
+        if (!Mathf.Approximately(lastSentAccumulatedDecayTime, accumulatedDecayTime))
         {
-            OscMessage message = new OscMessage
-            {
-                address = "/reverb/decaytime"
-            };
-            message.values.Add(accumulatedDecayTime);
-            osc.Send(message);
+            OscMessage msg = new OscMessage { address = "/reverb/decaytime" };
+            msg.values.Add(accumulatedDecayTime);
+            osc.Send(msg);
             lastSentAccumulatedDecayTime = accumulatedDecayTime;
         }
 
-        if (Math.Abs(lastSentAccumulatedWetDryMix - accumulatedWetDryMix) > Mathf.Epsilon)
+        if (!Mathf.Approximately(lastSentAccumulatedWetDryMix, accumulatedWetDryMix))
         {
-            OscMessage message = new OscMessage
-            {
-                address = "/reverb/mix"
-            };
-            message.values.Add(accumulatedWetDryMix);
-            osc.Send(message);
+            OscMessage msg = new OscMessage { address = "/reverb/mix" };
+            msg.values.Add(accumulatedWetDryMix);
+            osc.Send(msg);
             lastSentAccumulatedWetDryMix = accumulatedWetDryMix;
         }
 
-        if (Math.Abs(lastAccumulatedEQ - accumulatedEq) > Mathf.Epsilon)
+        if (!Mathf.Approximately(lastSentAccumulatedEq, accumulatedEq))
         {
-            OscMessage message = new OscMessage
-            {
-                address = "/reverb/eq"
-            };
-            message.values.Add(accumulatedEq);
-            osc.Send(message);
-            lastAccumulatedEQ = accumulatedEq;
+            OscMessage msg = new OscMessage { address = "/reverb/eq" };
+            msg.values.Add(accumulatedEq);
+            osc.Send(msg);
+            lastSentAccumulatedEq = accumulatedEq;
         }
     }
-
 }
