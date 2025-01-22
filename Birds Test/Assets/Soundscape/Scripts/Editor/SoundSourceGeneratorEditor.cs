@@ -14,22 +14,26 @@ public class SoundSourceGeneratorEditor : Editor
     private SerializedProperty leavesTreeSize;
     private SerializedProperty size;
     private SerializedProperty sourceSelectionProp;
-
-    // Properties for splashing fountain
     private SerializedProperty splashingTime;
     private SerializedProperty splashingBreak;
 
-    private string[] generatorTypes = { "Wind", "Water" };
-    private string[] foliageTypes = { "Needles", "Leaves" };
-    private string[] waterTypes = { "Flow", "Drinking Fountain", "Splashing Fountain" };
+    // 0 => Water, 1 => Wind
+    private string[] generatorTypes = { "Water", "Wind" };
 
-    // We now have only 4 possible channels (no separate wind/water arrays).
-    private string[] channelOptions =
-    {
+    // Water = channels 1..4 => internal [0..3]
+    private string[] waterChannelOptions = {
         "Stereo channel 1",
         "Stereo channel 2",
         "Stereo channel 3",
         "Stereo channel 4"
+    };
+
+    // Wind = channels 5..8 => internal [4..7]
+    private string[] windChannelOptions = {
+        "Stereo channel 5",
+        "Stereo channel 6",
+        "Stereo channel 7",
+        "Stereo channel 8"
     };
 
     private SoundSourceGenerator[] targetsList;
@@ -43,30 +47,17 @@ public class SoundSourceGeneratorEditor : Editor
         leavesTreeSize = serializedObject.FindProperty("leavesTreeSize");
         size = serializedObject.FindProperty("size");
         sourceSelectionProp = serializedObject.FindProperty("sourceSelectionIndex");
-
         splashingTime = serializedObject.FindProperty("splashingTime");
         splashingBreak = serializedObject.FindProperty("splashingBreak");
 
         targetsList = targets.Cast<SoundSourceGenerator>().ToArray();
 
-        // Register each SoundSourceGenerator so SourceSelectionManager
-        // knows which channels are taken, etc.
+        // Make sure each object is assigned in SourceSelectionManager
         foreach (var t in targetsList)
         {
-            string sourceType = "stereo";
-            int sel = t.SourceSelectionIndex;
-
-            if (!SourceSelectionManager.IsSourceTaken(sourceType, sel))
+            if (!SourceSelectionManager.IsSourceTaken("stereo", t.SourceSelectionIndex))
             {
-                SourceSelectionManager.AssignSource(sourceType, sel, t);
-            }
-            else
-            {
-                var assignedObj = SourceSelectionManager.GetAssignedObject(sourceType, sel);
-                if (assignedObj != t)
-                {
-                    // conflict handling logic if needed
-                }
+                SourceSelectionManager.AssignSource("stereo", t.SourceSelectionIndex, t);
             }
         }
     }
@@ -78,51 +69,53 @@ public class SoundSourceGeneratorEditor : Editor
         EditorGUILayout.LabelField("Generator Settings", EditorStyles.boldLabel);
         EditorGUILayout.PropertyField(enableGenerator, new GUIContent("Enable Generator"));
 
-        // Select Wind or Water
+        // Draw the generator type dropdown
         DrawGeneratorTypeDropdown();
         GUILayout.Space(10);
 
-        // Show relevant fields depending on Wind or Water
+        // If multiple objects have different types, just show info
         if (selectedGeneratorTypeIndex.hasMultipleDifferentValues)
         {
             EditorGUILayout.HelpBox("Generator type varies across selected objects.", MessageType.Info);
         }
-        else if (selectedGeneratorTypeIndex.intValue == 0) // Wind
+        else
         {
-            DrawFoliageTypeDropdown();
-            DrawLeavesTreeSizeSlider();
-        }
-        else if (selectedGeneratorTypeIndex.intValue == 1) // Water
-        {
-            DrawWaterTypeDropdown();
-            DrawSizeSlider();
-
-            // If "Splashing Fountain" is selected
-            if (!selectedWaterTypeIndex.hasMultipleDifferentValues &&
-                selectedWaterTypeIndex.intValue == 2)
+            // 0 => Water, 1 => Wind
+            if (selectedGeneratorTypeIndex.intValue == 0)
             {
-                // Show splashingTime
-                EditorGUI.showMixedValue = splashingTime.hasMultipleDifferentValues;
-                float newSplashingTime = EditorGUILayout.Slider("Splashing Time", splashingTime.floatValue, 0.0f, 10.0f);
-                if (!Mathf.Approximately(newSplashingTime, splashingTime.floatValue))
-                {
-                    splashingTime.floatValue = newSplashingTime;
-                }
-                EditorGUI.showMixedValue = false;
+                // Water
+                DrawWaterTypeDropdown();
+                DrawSizeSlider();
+                DrawChannelSelection(isWater: true);
 
-                // Show splashingBreak
-                EditorGUI.showMixedValue = splashingBreak.hasMultipleDifferentValues;
-                float newSplashingBreak = EditorGUILayout.Slider("Splashing Break", splashingBreak.floatValue, 0.0f, 10.0f);
-                if (!Mathf.Approximately(newSplashingBreak, splashingBreak.floatValue))
+                // If "Splashing Fountain" (2), show splashing fields
+                if (!selectedWaterTypeIndex.hasMultipleDifferentValues && selectedWaterTypeIndex.intValue == 2)
                 {
-                    splashingBreak.floatValue = newSplashingBreak;
+                    EditorGUI.showMixedValue = splashingTime.hasMultipleDifferentValues;
+                    float newSplashTime = EditorGUILayout.Slider("Splashing Time", splashingTime.floatValue, 0.0f, 10.0f);
+                    if (!Mathf.Approximately(newSplashTime, splashingTime.floatValue))
+                    {
+                        splashingTime.floatValue = newSplashTime;
+                    }
+                    EditorGUI.showMixedValue = false;
+
+                    EditorGUI.showMixedValue = splashingBreak.hasMultipleDifferentValues;
+                    float newSplashBreak = EditorGUILayout.Slider("Splashing Break", splashingBreak.floatValue, 0.0f, 10.0f);
+                    if (!Mathf.Approximately(newSplashBreak, splashingBreak.floatValue))
+                    {
+                        splashingBreak.floatValue = newSplashBreak;
+                    }
+                    EditorGUI.showMixedValue = false;
                 }
-                EditorGUI.showMixedValue = false;
+            }
+            else
+            {
+                // Wind
+                DrawFoliageTypeDropdown();
+                DrawLeavesTreeSizeSlider();
+                DrawChannelSelection(isWater: false);
             }
         }
-
-        // Draw the unified channel selection (always 4 channels).
-        DrawChannelSelection();
 
         serializedObject.ApplyModifiedProperties();
     }
@@ -130,10 +123,56 @@ public class SoundSourceGeneratorEditor : Editor
     private void DrawGeneratorTypeDropdown()
     {
         EditorGUI.showMixedValue = selectedGeneratorTypeIndex.hasMultipleDifferentValues;
-        int newGeneratorTypeIndex = EditorGUILayout.Popup("Generator Type", selectedGeneratorTypeIndex.intValue, generatorTypes);
-        if (newGeneratorTypeIndex != selectedGeneratorTypeIndex.intValue)
+        int oldType = selectedGeneratorTypeIndex.intValue;
+        int newType = EditorGUILayout.Popup("Generator Type", oldType, generatorTypes);
+        EditorGUI.showMixedValue = false;
+
+        if (newType != oldType)
         {
-            selectedGeneratorTypeIndex.intValue = newGeneratorTypeIndex;
+            selectedGeneratorTypeIndex.intValue = newType;
+            serializedObject.ApplyModifiedProperties(); // apply the new type
+
+            // SHIFT the channel for each object
+            foreach (var t in targetsList)
+            {
+                // Unassign old
+                if (SourceSelectionManager.IsSourceTaken("stereo", t.SourceSelectionIndex))
+                {
+                    var assignedObj = SourceSelectionManager.GetAssignedObject("stereo", t.SourceSelectionIndex);
+                    if (assignedObj == t)
+                        SourceSelectionManager.UnassignSource("stereo", t.SourceSelectionIndex);
+                }
+
+                // Water->Wind => +4, Wind->Water => -4
+                if (oldType == 0 && newType == 1) // water->wind
+                {
+                    t.SourceSelectionIndex += 4;
+                }
+                else if (oldType == 1 && newType == 0) // wind->water
+                {
+                    t.SourceSelectionIndex -= 4;
+                }
+
+                // Reassign new channel
+                SourceSelectionManager.AssignSource("stereo", t.SourceSelectionIndex, t);
+
+                // -- FORCE an immediate OSC update --
+                // (OnValidate may not be called reliably at this moment)
+                t.ForceSendMessages();
+
+                EditorUtility.SetDirty(t);
+            }
+        }
+    }
+
+    private void DrawWaterTypeDropdown()
+    {
+        EditorGUI.showMixedValue = selectedWaterTypeIndex.hasMultipleDifferentValues;
+        int newVal = EditorGUILayout.Popup("Water Type", selectedWaterTypeIndex.intValue,
+            new string[] { "Flow", "Drinking Fountain", "Splashing Fountain" });
+        if (newVal != selectedWaterTypeIndex.intValue)
+        {
+            selectedWaterTypeIndex.intValue = newVal;
         }
         EditorGUI.showMixedValue = false;
     }
@@ -141,21 +180,11 @@ public class SoundSourceGeneratorEditor : Editor
     private void DrawFoliageTypeDropdown()
     {
         EditorGUI.showMixedValue = selectedFoliageTypeIndex.hasMultipleDifferentValues;
-        int newFoliageTypeIndex = EditorGUILayout.Popup("Foliage Type", selectedFoliageTypeIndex.intValue, foliageTypes);
-        if (newFoliageTypeIndex != selectedFoliageTypeIndex.intValue)
+        int newVal = EditorGUILayout.Popup("Foliage Type", selectedFoliageTypeIndex.intValue,
+            new string[] { "Needles", "Leaves" });
+        if (newVal != selectedFoliageTypeIndex.intValue)
         {
-            selectedFoliageTypeIndex.intValue = newFoliageTypeIndex;
-        }
-        EditorGUI.showMixedValue = false;
-    }
-
-    private void DrawWaterTypeDropdown()
-    {
-        EditorGUI.showMixedValue = selectedWaterTypeIndex.hasMultipleDifferentValues;
-        int newWaterTypeIndex = EditorGUILayout.Popup("Water Type", selectedWaterTypeIndex.intValue, waterTypes);
-        if (newWaterTypeIndex != selectedWaterTypeIndex.intValue)
-        {
-            selectedWaterTypeIndex.intValue = newWaterTypeIndex;
+            selectedFoliageTypeIndex.intValue = newVal;
         }
         EditorGUI.showMixedValue = false;
     }
@@ -163,10 +192,10 @@ public class SoundSourceGeneratorEditor : Editor
     private void DrawLeavesTreeSizeSlider()
     {
         EditorGUI.showMixedValue = leavesTreeSize.hasMultipleDifferentValues;
-        float newLeavesTreeSize = EditorGUILayout.Slider("Leaves/Tree Size", leavesTreeSize.floatValue, 0.1f, 10.0f);
-        if (!Mathf.Approximately(newLeavesTreeSize, leavesTreeSize.floatValue))
+        float newVal = EditorGUILayout.Slider("Leaves/Tree Size", leavesTreeSize.floatValue, 0.1f, 10.0f);
+        if (!Mathf.Approximately(newVal, leavesTreeSize.floatValue))
         {
-            leavesTreeSize.floatValue = newLeavesTreeSize;
+            leavesTreeSize.floatValue = newVal;
         }
         EditorGUI.showMixedValue = false;
     }
@@ -174,79 +203,73 @@ public class SoundSourceGeneratorEditor : Editor
     private void DrawSizeSlider()
     {
         EditorGUI.showMixedValue = size.hasMultipleDifferentValues;
-        float newSize = EditorGUILayout.Slider("Size", size.floatValue, 0.1f, 10.0f);
-        if (!Mathf.Approximately(newSize, size.floatValue))
+        float newVal = EditorGUILayout.Slider("Size", size.floatValue, 0.1f, 10.0f);
+        if (!Mathf.Approximately(newVal, size.floatValue))
         {
-            size.floatValue = newSize;
+            size.floatValue = newVal;
         }
         EditorGUI.showMixedValue = false;
     }
 
     /// <summary>
-    /// Now we always present the same 4 channels for selection, regardless of Wind or Water.
+    /// Draws the channel selection for Water (0..3 -> "1..4") or Wind (4..7 -> "5..8").
     /// </summary>
-    private void DrawChannelSelection()
+    private void DrawChannelSelection(bool isWater)
     {
+        // Gather all SourceSelectionIndex from selected objects
         int[] selections = targetsList.Select(t => t.SourceSelectionIndex).ToArray();
-        bool multipleValues = selections.Distinct().Count() > 1;
-
+        bool multipleValues = (selections.Distinct().Count() > 1);
         EditorGUI.showMixedValue = multipleValues;
+
+        // Water => waterChannelOptions, Wind => windChannelOptions
+        string[] options = isWater ? waterChannelOptions : windChannelOptions;
+
         int currentSelection = selections[0];
 
-        // Clamp if out of range
-        if (currentSelection < 0 || currentSelection >= channelOptions.Length)
-            currentSelection = 0;
+        // Convert the internal index to the display index
+        int displayIndex;
+        if (isWater)
+        {
+            // Water => internal 0..3 => displayed as 1..4
+            displayIndex = currentSelection;
+            if (displayIndex < 0) displayIndex = 0;
+            if (displayIndex > 3) displayIndex = 3;
+        }
+        else
+        {
+            // Wind => internal 4..7 => displayed as 5..8
+            displayIndex = currentSelection - 4;
+            if (displayIndex < 0) displayIndex = 0;
+            if (displayIndex > 3) displayIndex = 3;
+        }
 
-        int newSelection = EditorGUILayout.Popup("Channel", currentSelection, channelOptions);
+        int newDisplayIndex = EditorGUILayout.Popup("Channel", displayIndex, options);
         EditorGUI.showMixedValue = false;
 
-        // If user picks the same channel, do nothing
-        if (newSelection == currentSelection) return;
+        if (newDisplayIndex == displayIndex) return; // no change
 
-        // Otherwise, reassign all selected objects to newSelection
+        // Convert the display index back to the actual internal index
+        int newSelection = isWater ? newDisplayIndex : (newDisplayIndex + 4);
+
+        // Apply to all selected objects
         foreach (var t in targetsList)
         {
-            // first unassign old
-            if (SourceSelectionManager.IsSourceTaken("stereo", t.SourceSelectionIndex))
+            int oldSel = t.SourceSelectionIndex;
+
+            // Unassign old
+            if (SourceSelectionManager.IsSourceTaken("stereo", oldSel))
             {
-                var assignedObj = SourceSelectionManager.GetAssignedObject("stereo", t.SourceSelectionIndex);
+                var assignedObj = SourceSelectionManager.GetAssignedObject("stereo", oldSel);
                 if (assignedObj == t)
-                {
-                    SourceSelectionManager.UnassignSource("stereo", t.SourceSelectionIndex);
-                }
+                    SourceSelectionManager.UnassignSource("stereo", oldSel);
             }
 
-            // assign new
-            if (SourceSelectionManager.IsSourceTaken("stereo", newSelection))
-            {
-                var otherObj = SourceSelectionManager.GetAssignedObject("stereo", newSelection);
-                if (otherObj != null && otherObj != t && otherObj is SoundSourceGenerator otherGen)
-                {
-                    // swap channels with the other generator
-                    SourceSelectionManager.UnassignSource("stereo", newSelection);
+            // Set the new selection
+            t.SourceSelectionIndex = newSelection;
+            SourceSelectionManager.AssignSource("stereo", newSelection, t);
 
-                    t.SourceSelectionIndex = newSelection;
-                    SourceSelectionManager.AssignSource("stereo", newSelection, t);
-
-                    // place the other generator in old selection
-                    if (otherGen.SourceSelectionIndex != t.SourceSelectionIndex)
-                    {
-                        otherGen.SourceSelectionIndex = currentSelection;
-                        SourceSelectionManager.AssignSource("stereo", currentSelection, otherGen);
-                    }
-                    EditorUtility.SetDirty(otherGen);
-                }
-                else
-                {
-                    t.SourceSelectionIndex = newSelection;
-                    SourceSelectionManager.AssignSource("stereo", newSelection, t);
-                }
-            }
-            else
-            {
-                t.SourceSelectionIndex = newSelection;
-                SourceSelectionManager.AssignSource("stereo", newSelection, t);
-            }
+            // FORCE an immediate OSC update
+            t.ForceSendMessages();
 
             EditorUtility.SetDirty(t);
         }

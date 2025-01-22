@@ -6,32 +6,26 @@ public class SoundSourceGenerator : SoundSource
 {
     public bool enableGenerator = true;
 
-    public string[] generatorTypes = { "Wind", "Water" };
+    // Inverted so 0 => Water, 1 => Wind
+    public string[] generatorTypes = { "Water", "Wind" };
     public int selectedGeneratorTypeIndex = 0;
 
-    // For Wind
+    // ---- Water stuff ----
+    public string[] waterTypes = { "Flow", "Drinking Fountain", "Splashing Fountain" };
+    public int selectedWaterTypeIndex = 0;
+    public float size = 1.0f;
+    public float splashingTime = 5.0f;
+    public float splashingBreak = 0.0f;
+
+    // ---- Wind stuff ----
     public string[] foliageTypes = { "Needles", "Leaves" };
     public int selectedFoliageTypeIndex = 0;
     public float leavesTreeSize = 1.0f;
 
-    // For Water
-    public string[] waterTypes = { "Flow", "Drinking Fountain", "Splashing Fountain" };
-    public int selectedWaterTypeIndex = 0;
-    public float size = 1.0f;
-
-    // **New fields for Splashing Fountain**
-    // Will only be relevant if selectedWaterTypeIndex == 2 (Splashing Fountain)
-    public float splashingTime = 5.0f;  // Default value
-    public float splashingBreak = 0.0f; // Default value
-
     [SerializeField, HideInInspector]
     private int sourceSelection = 0;
 
-    protected override string SourceType => "stereo";
-    protected override int SourceSelection => sourceSelection;
-    protected override float MultiSize => 1.0f;
-    protected override List<ParameterValue> ParameterValues => null;
-
+    // For bounding box / forest width
     private MeshFilter meshFilter;
     private MeshCollider meshCollider;
     private Bounds combinedBounds;
@@ -39,7 +33,7 @@ public class SoundSourceGenerator : SoundSource
     private Vector3 forestCenter;
     private Vector3 flowWaterCenter;
 
-    // Last sent values for OSC
+    // Keep track of the last values we sent for OSC
     private bool lastSentEnableGenerator;
     private int lastSentSelectedGeneratorTypeIndex;
     private int lastSentSelectedFoliageTypeIndex;
@@ -51,6 +45,14 @@ public class SoundSourceGenerator : SoundSource
     private float lastSentForestWidth;
     private Vector3 lastSentForestCenter;
     private Vector3 lastSentFlowWaterCenter;
+
+    // Implementation from the base SoundSource
+    protected override string SourceType => "stereo";
+    protected override int SourceSelection => sourceSelection;
+    protected override float MultiSize => 1.0f;
+    protected override List<ParameterValue> ParameterValues => null;
+
+    private GameObject debugMesh;
 
     public int SourceSelectionIndex
     {
@@ -75,13 +77,13 @@ public class SoundSourceGenerator : SoundSource
 
         SceneManager.Instance.OnEnableWindChanged += HandleEnableWindChanged;
 
-        // Initial calculation for wind if enabled
-        if (selectedGeneratorTypeIndex == 0 && SceneManager.Instance.EnableWind)
+        // If started as Wind (1) and wind is globally enabled
+        if (selectedGeneratorTypeIndex == 1 && SceneManager.Instance.EnableWind)
         {
             CalculateBounds();
         }
 
-        // Initialize last sent values so they differ from current (forcing initial send)
+        // Initialize the "last sent" trackers so first SendMessages() definitely sends
         lastSentEnableGenerator = !enableGenerator;
         lastSentSelectedGeneratorTypeIndex = -1;
         lastSentSelectedFoliageTypeIndex = -1;
@@ -93,8 +95,26 @@ public class SoundSourceGenerator : SoundSource
         lastSentForestWidth = 0f;
         lastSentForestCenter = Vector3.zero;
 
-        // Initial send of messages
         SendMessages();
+
+        int layer = LayerMask.NameToLayer("Debug");
+        if (layer == -1)
+        {
+            Debug.LogWarning($"Layer 'Debug' does not exist!");
+        }
+
+        GameObject[] allObjects = FindObjectsOfType<GameObject>();
+        List<GameObject> objectsInLayer = new List<GameObject>();
+
+        foreach (GameObject obj in allObjects)
+        {
+            if (obj.layer == layer)
+            {
+                debugMesh = obj;
+                break;
+            }
+        }
+        Debug.Log(debugMesh);
     }
 
     private void OnDestroy()
@@ -107,32 +127,56 @@ public class SoundSourceGenerator : SoundSource
 
     private void HandleEnableWindChanged(bool isEnabled)
     {
-        if (selectedGeneratorTypeIndex == 0 && isEnabled)
+        // If I'm "Wind" and wind just got enabled, recalc bounds & re-send
+        if (selectedGeneratorTypeIndex == 1 && isEnabled)
         {
             CalculateBounds();
             SendMessages();
         }
     }
 
+    protected override void Update()
+    {
+        base.Update();
+
+        // If water (0), type=Flow (0), and globally water is enabled, track the flow
+        if (selectedGeneratorTypeIndex == 0 && selectedWaterTypeIndex == 0 && SceneManager.Instance.EnableWater)
+        {
+            if (meshCollider != null && mainCamera != null)
+            {
+                Vector3 cameraPosition = mainCamera.transform.position;
+                Vector3 closestPoint = Physics.ClosestPoint(cameraPosition, meshCollider, meshCollider.transform.position, meshCollider.transform.rotation);
+                flowWaterCenter = closestPoint - cameraPosition;
+
+                if (debugMesh != null)
+                {
+                    debugMesh.transform.position = closestPoint;
+                }
+            }
+        }
+    }
+
     protected override void CalculateRelativePosition()
     {
-        if (selectedGeneratorTypeIndex == 0 && SceneManager.Instance.EnableWind)
+        // If wind & globally enabled, use forest center - camera
+        if (selectedGeneratorTypeIndex == 1 && SceneManager.Instance.EnableWind)
         {
             relativePosition = forestCenter - mainCamera.transform.position;
         }
-        else if (selectedGeneratorTypeIndex == 1 && selectedWaterTypeIndex == 0)
+        // If water = Flow, use flowWaterCenter
+        else if (selectedGeneratorTypeIndex == 0 && selectedWaterTypeIndex == 0)
         {
             relativePosition = flowWaterCenter;
         }
         else
         {
+            // fallback
             base.CalculateRelativePosition();
         }
     }
 
     private void CalculateBounds()
     {
-        // Check if there are child elements and calculate the bounding box
         if (transform.childCount > 1)
         {
             bool boundsInitialized = false;
@@ -176,116 +220,52 @@ public class SoundSourceGenerator : SoundSource
         meshCollider.convex = true;
     }
 
-    protected override void Update()
-    {
-        base.Update();
-
-        if (selectedGeneratorTypeIndex == 1 && selectedWaterTypeIndex == 0 && SceneManager.Instance.EnableWater)
-        {
-            if (meshCollider != null && mainCamera != null)
-            {
-                Vector3 cameraPosition = mainCamera.transform.position;
-                Vector3 closestPoint = Physics.ClosestPoint(cameraPosition, meshCollider, meshCollider.transform.position, meshCollider.transform.rotation);
-
-                flowWaterCenter = closestPoint - cameraPosition;
-                Debug.Log(flowWaterCenter);
-            }
-        }
-    }
-
+    /// <summary>
+    /// Protected method from base. This sends the actual OSC messages.
+    /// Called in Start, OnValidate, or anytime we suspect changes.
+    /// </summary>
     protected override void SendMessages()
     {
         base.SendMessages();
-
         if (osc == null) return;
 
-        // All generators use the same base address.
-        string source = "/source/generator";
+        // generatorTypeIndex: 0 => Water, 1 => Wind
+        string sourceBase = "/source/generator";
+        string genType = (selectedGeneratorTypeIndex == 0) ? "water" : "wind";
+        // +1 so internal index 0..7 => OSC channel 1..8
+        int customSourceValue = SourceSelection + 1;
 
-        // We now unify source indices to 0..3 in code, and map them to 1..4 in OSC.
-        int customSourceValue = SourceSelectionIndex + 1;
+        Debug.Log($"[SendMessages] genType={genType}, SourceSelection={SourceSelection}, customSourceValue={customSourceValue}");
 
-        // Determine whether we're sending "wind" or "water".
-        var genType = (selectedGeneratorTypeIndex == 0) ? "wind" : "water";
-        Debug.Log($"{genType} {customSourceValue}");
-
-        // Send enable/disable status if it changed.
+        // Send the "status" if changed
         if (lastSentEnableGenerator != enableGenerator)
         {
-            var statusMessage = new OscMessage
+            OscMessage statusMsg = new OscMessage
             {
-                address = $"{source}/{genType}/{customSourceValue}/status"
+                address = $"{sourceBase}/{genType}/{customSourceValue}/status"
             };
-            statusMessage.values.Add(enableGenerator ? 1 : 0);
-            osc.Send(statusMessage);
+            statusMsg.values.Add(enableGenerator ? 1 : 0);
+            osc.Send(statusMsg);
+
             lastSentEnableGenerator = enableGenerator;
         }
 
-        // If the generator is disabled, exit early.
+        // If not enabled, no need to send rest
         if (!enableGenerator) return;
 
-        // ---------------------------
-        //        WIND
-        // ---------------------------
+        // If Water (0)
         if (selectedGeneratorTypeIndex == 0)
         {
-            // Foliage type
-            if (selectedFoliageTypeIndex != lastSentSelectedFoliageTypeIndex ||
-                selectedGeneratorTypeIndex != lastSentSelectedGeneratorTypeIndex)
-            {
-                var message = new OscMessage
-                {
-                    address = $"{source}/wind/{customSourceValue}/type"
-                };
-                message.values.Add(selectedFoliageTypeIndex);
-                osc.Send(message);
-                lastSentSelectedFoliageTypeIndex = selectedFoliageTypeIndex;
-            }
-
-            // Leaves/tree size
-            if (!Mathf.Approximately(leavesTreeSize, lastSentLeavesTreeSize) ||
-                selectedGeneratorTypeIndex != lastSentSelectedGeneratorTypeIndex)
-            {
-                var message = new OscMessage
-                {
-                    address = $"{source}/wind/{customSourceValue}/size"
-                };
-                message.values.Add(leavesTreeSize);
-                osc.Send(message);
-                lastSentLeavesTreeSize = leavesTreeSize;
-            }
-
-            // Forest width (if multiple child objects form a large area)
-            if (!Mathf.Approximately(forestWidth, lastSentForestWidth) ||
-                selectedGeneratorTypeIndex != lastSentSelectedGeneratorTypeIndex)
-            {
-                var message = new OscMessage
-                {
-                    address = $"{source}/wind/{customSourceValue}/width"
-                };
-                // Map forestWidth to a smaller range for OSC.
-                message.values.Add((forestWidth > 0)
-                    ? MapValue(forestWidth, 1f, 100f, 1f, 10f)
-                    : 0);
-                osc.Send(message);
-                lastSentForestWidth = forestWidth;
-            }
-        }
-        // ---------------------------
-        //        WATER
-        // ---------------------------
-        else if (selectedGeneratorTypeIndex == 1)
-        {
-            // Water type (Flow, Drinking Fountain, Splashing Fountain)
+            // Water type
             if (selectedWaterTypeIndex != lastSentSelectedWaterTypeIndex ||
                 selectedGeneratorTypeIndex != lastSentSelectedGeneratorTypeIndex)
             {
-                var message = new OscMessage
+                OscMessage msg = new OscMessage
                 {
-                    address = $"{source}/water/{customSourceValue}/type"
+                    address = $"{sourceBase}/water/{customSourceValue}/type"
                 };
-                message.values.Add(selectedWaterTypeIndex);
-                osc.Send(message);
+                msg.values.Add(selectedWaterTypeIndex);
+                osc.Send(msg);
                 lastSentSelectedWaterTypeIndex = selectedWaterTypeIndex;
             }
 
@@ -293,64 +273,116 @@ public class SoundSourceGenerator : SoundSource
             if (!Mathf.Approximately(size, lastSentSize) ||
                 selectedGeneratorTypeIndex != lastSentSelectedGeneratorTypeIndex)
             {
-                var message = new OscMessage
+                OscMessage msg = new OscMessage
                 {
-                    address = $"{source}/water/{customSourceValue}/size"
+                    address = $"{sourceBase}/water/{customSourceValue}/size"
                 };
-                message.values.Add(size);
-                osc.Send(message);
+                msg.values.Add(size);
+                osc.Send(msg);
                 lastSentSize = size;
             }
 
-            // Additional OSC parameters for "Splashing Fountain" (index=2)
+            // If "Splashing Fountain" (2), send timing
             if (selectedWaterTypeIndex == 2)
             {
-                // splashingTime
                 if (!Mathf.Approximately(splashingTime, lastSentSplashingTime) ||
                     selectedGeneratorTypeIndex != lastSentSelectedGeneratorTypeIndex)
                 {
-                    var timeMessage = new OscMessage
+                    OscMessage tMsg = new OscMessage
                     {
-                        address = $"{source}/water/{customSourceValue}/splashingtiming"
+                        address = $"{sourceBase}/water/{customSourceValue}/splashingtiming"
                     };
-                    timeMessage.values.Add(splashingTime);
-                    osc.Send(timeMessage);
+                    tMsg.values.Add(splashingTime);
+                    osc.Send(tMsg);
                     lastSentSplashingTime = splashingTime;
                 }
 
-                // splashingBreak
                 if (!Mathf.Approximately(splashingBreak, lastSentSplashingBreak) ||
                     selectedGeneratorTypeIndex != lastSentSelectedGeneratorTypeIndex)
                 {
-                    var breakMessage = new OscMessage
+                    OscMessage bMsg = new OscMessage
                     {
-                        address = $"{source}/water/{customSourceValue}/splashingbreak"
+                        address = $"{sourceBase}/water/{customSourceValue}/splashingbreak"
                     };
-                    breakMessage.values.Add(splashingBreak);
-                    osc.Send(breakMessage);
+                    bMsg.values.Add(splashingBreak);
+                    osc.Send(bMsg);
                     lastSentSplashingBreak = splashingBreak;
                 }
             }
         }
+        else
+        {
+            // "Wind" (1)
+            if (selectedFoliageTypeIndex != lastSentSelectedFoliageTypeIndex ||
+                selectedGeneratorTypeIndex != lastSentSelectedGeneratorTypeIndex)
+            {
+                OscMessage msg = new OscMessage
+                {
+                    address = $"{sourceBase}/wind/{customSourceValue}/type"
+                };
+                msg.values.Add(selectedFoliageTypeIndex);
+                osc.Send(msg);
+                lastSentSelectedFoliageTypeIndex = selectedFoliageTypeIndex;
+            }
 
-        // Update our cached generator type so we know if it changes next time.
+            if (!Mathf.Approximately(leavesTreeSize, lastSentLeavesTreeSize) ||
+                selectedGeneratorTypeIndex != lastSentSelectedGeneratorTypeIndex)
+            {
+                OscMessage msg = new OscMessage
+                {
+                    address = $"{sourceBase}/wind/{customSourceValue}/size"
+                };
+                msg.values.Add(leavesTreeSize);
+                osc.Send(msg);
+                lastSentLeavesTreeSize = leavesTreeSize;
+            }
+
+            if (!Mathf.Approximately(forestWidth, lastSentForestWidth) ||
+                selectedGeneratorTypeIndex != lastSentSelectedGeneratorTypeIndex)
+            {
+                OscMessage msg = new OscMessage
+                {
+                    address = $"{sourceBase}/wind/{customSourceValue}/width"
+                };
+
+                // Example of mapping your forest size
+                float mapped = MapValue(forestWidth, 1f, 100f, 1f, 10f);
+                msg.values.Add((forestWidth > 0) ? mapped : 0);
+                osc.Send(msg);
+                lastSentForestWidth = forestWidth;
+            }
+        }
+
+        // Update last-sent generator type
         if (selectedGeneratorTypeIndex != lastSentSelectedGeneratorTypeIndex)
         {
             lastSentSelectedGeneratorTypeIndex = selectedGeneratorTypeIndex;
         }
     }
 
-
     private float MapValue(float value, float inMin, float inMax, float outMin, float outMax)
     {
-        if (value > inMax)
-        {
-            value = inMax;
-        }
-        else if (value < inMin)
-        {
-            value = inMin;
-        }
+        if (value > inMax) value = inMax;
+        if (value < inMin) value = inMin;
         return outMin + (value - inMin) * (outMax - outMin) / (inMax - inMin);
+    }
+
+#if UNITY_EDITOR
+    protected void OnValidate()
+    {
+        // Called in editor if you tweak values in the default inspector
+        // If you are modifying via a *custom* editor script, OnValidate() might not be always triggered
+        //base.OnValidate();
+        SendMessages();
+    }
+#endif
+
+    /// <summary>
+    /// PUBLIC method that forcibly calls SendMessages() from the Editor script.
+    /// This is needed if OnValidate() isn't invoked for some reason.
+    /// </summary>
+    public void ForceSendMessages()
+    {
+        SendMessages();
     }
 }
