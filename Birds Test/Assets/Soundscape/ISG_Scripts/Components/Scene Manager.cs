@@ -283,7 +283,7 @@ public class SceneManager : MonoBehaviour
         {
             if (ambientSoundFile != lastSentAmbientSoundFile && !string.IsNullOrEmpty(ambientSoundFile))
             {
-                OscMessage message = new OscMessage { address = "/aformat/1" };
+                OscMessage message = new OscMessage { address = "/bformat/1" };
                 message.values.Add(ambientSoundFile);
                 osc.Send(message);
                 lastSentAmbientSoundFile = ambientSoundFile;
