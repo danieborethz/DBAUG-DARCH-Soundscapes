@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+[AddComponentMenu("")]
 public class SoundSource : MonoBehaviour
 {
 
