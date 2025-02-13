@@ -14,7 +14,7 @@ public class AudioDataCacher : EditorWindow
     // New fields for additional parameters
     private int monoSources = 16;
     private int stereoSources = 8;
-    private int ambisonicSources = 3;
+    private int multiSources = 3;
 
     [MenuItem("Soundscape/Audio Data Updater")]
     public static void ShowWindow()
@@ -61,7 +61,7 @@ public class AudioDataCacher : EditorWindow
         // Input fields for Mono, Stereo, and Ambisonic sources
         monoSources = EditorGUILayout.IntField("Mono Sources", monoSources);
         stereoSources = EditorGUILayout.IntField("Stereo Sources", stereoSources);
-        ambisonicSources = EditorGUILayout.IntField("Ambisonic Sources", ambisonicSources);
+        multiSources = EditorGUILayout.IntField("Multi Sources", multiSources);
 
         GUILayout.Space(10);
 
@@ -84,7 +84,7 @@ public class AudioDataCacher : EditorWindow
         {
             monoSources = monoSources,
             stereoSources = stereoSources,
-            ambisonicSources = ambisonicSources,
+            ambisonicSources = multiSources,
             categories = new List<AudioCategory>()
         };
 
