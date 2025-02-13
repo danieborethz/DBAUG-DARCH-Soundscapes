@@ -9,9 +9,10 @@ using System.Linq;
 public class AudioDataCacher : EditorWindow
 {
     private string rootFolderPath = "";
+    // Default path for the cache file.
     private string cacheFilePath = "Assets/AudioDataCache.json";
 
-    // New fields for additional parameters
+    // Source settings – these will be overridden if a valid cache file exists.
     private int monoSources = 16;
     private int stereoSources = 8;
     private int multiSources = 3;
@@ -20,6 +21,15 @@ public class AudioDataCacher : EditorWindow
     public static void ShowWindow()
     {
         GetWindow<AudioDataCacher>("Audio Data Updater");
+    }
+
+    // When the window is opened, check if the cache file exists and load its values.
+    private void OnEnable()
+    {
+        if (File.Exists(cacheFilePath))
+        {
+            LoadSourcesFromFile();
+        }
     }
 
     private void OnGUI()
@@ -42,7 +52,7 @@ public class AudioDataCacher : EditorWindow
 
         GUILayout.Space(10);
 
-        // Input for Cache File Path
+        // Input for Cache File Path with a Load button to update source settings from file.
         EditorGUILayout.BeginHorizontal();
         GUILayout.Label("Cache File Path", GUILayout.Width(100));
         cacheFilePath = EditorGUILayout.TextField(cacheFilePath);
@@ -54,11 +64,15 @@ public class AudioDataCacher : EditorWindow
                 cacheFilePath = selectedFile;
             }
         }
+        if (GUILayout.Button("Load Sources", GUILayout.Width(100)))
+        {
+            LoadSourcesFromFile();
+        }
         EditorGUILayout.EndHorizontal();
 
         GUILayout.Space(10);
 
-        // Input fields for Mono, Stereo, and Ambisonic sources
+        // Input fields for Mono, Stereo, and Ambisonic (Multi) sources.
         monoSources = EditorGUILayout.IntField("Mono Sources", monoSources);
         stereoSources = EditorGUILayout.IntField("Stereo Sources", stereoSources);
         multiSources = EditorGUILayout.IntField("Multi Sources", multiSources);
@@ -71,70 +85,118 @@ public class AudioDataCacher : EditorWindow
         }
     }
 
+    /// <summary>
+    /// Attempts to load the source settings from the cache file if it exists.
+    /// </summary>
+    private void LoadSourcesFromFile()
+    {
+        if (File.Exists(cacheFilePath))
+        {
+            string json = File.ReadAllText(cacheFilePath);
+            AudioLibrary loadedLibrary = JsonUtility.FromJson<AudioLibrary>(json);
+            if (loadedLibrary != null)
+            {
+                monoSources = loadedLibrary.monoSources;
+                stereoSources = loadedLibrary.stereoSources;
+                multiSources = loadedLibrary.ambisonicSources;
+                Debug.Log("Loaded source settings from cache file.");
+            }
+            else
+            {
+                Debug.LogError("Failed to parse the cache file.");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("Cache file does not exist at: " + cacheFilePath);
+        }
+    }
+
+    /// <summary>
+    /// Updates the cache file.  
+    /// If a valid root folder is set, it scans the folder and updates both the sources and categories.
+    /// If the root folder is empty or invalid, it preserves any existing categories in the cache and updates only the sources.
+    /// </summary>
     private void CacheAudioData()
     {
-        if (string.IsNullOrEmpty(rootFolderPath) || !Directory.Exists(rootFolderPath))
+        AudioLibrary audioLibrary = null;
+
+        // If a valid root folder is provided, create a new library by scanning it.
+        if (!string.IsNullOrEmpty(rootFolderPath) && Directory.Exists(rootFolderPath))
         {
-            Debug.LogError("Root folder does not exist: " + rootFolderPath);
-            return;
+            audioLibrary = new AudioLibrary
+            {
+                monoSources = monoSources,
+                stereoSources = stereoSources,
+                ambisonicSources = multiSources,
+                categories = new List<AudioCategory>()
+            };
+            ScanFolder(rootFolderPath, audioLibrary.categories, "");
+        }
+        else
+        {
+            // If no valid root folder is set, try to load the existing cache.
+            if (File.Exists(cacheFilePath))
+            {
+                string json = File.ReadAllText(cacheFilePath);
+                audioLibrary = JsonUtility.FromJson<AudioLibrary>(json);
+                if (audioLibrary == null)
+                {
+                    Debug.LogWarning("Failed to parse existing cache file; creating new AudioLibrary.");
+                    audioLibrary = new AudioLibrary { categories = new List<AudioCategory>() };
+                }
+            }
+            else
+            {
+                // No cache exists, so create a new one.
+                audioLibrary = new AudioLibrary { categories = new List<AudioCategory>() };
+            }
+
+            // Update the source settings while keeping the existing categories.
+            audioLibrary.monoSources = monoSources;
+            audioLibrary.stereoSources = stereoSources;
+            audioLibrary.ambisonicSources = multiSources;
+            Debug.LogWarning("No valid root folder set; preserving existing categories and updating only source settings.");
         }
 
-        // Create audio library object and add the new parameters
-        AudioLibrary audioLibrary = new AudioLibrary
-        {
-            monoSources = monoSources,
-            stereoSources = stereoSources,
-            ambisonicSources = multiSources,
-            categories = new List<AudioCategory>()
-        };
-
-        ScanFolder(rootFolderPath, audioLibrary.categories, "");
-
-        // Serialize to JSON
-        string json = JsonUtility.ToJson(audioLibrary, true);
-        File.WriteAllText(cacheFilePath, json);
+        // Serialize to JSON and write the cache file.
+        string updatedJson = JsonUtility.ToJson(audioLibrary, true);
+        File.WriteAllText(cacheFilePath, updatedJson);
         AssetDatabase.Refresh();
         Debug.Log("Audio data cached successfully at: " + cacheFilePath);
 
-        // Now update all SoundSourceAudio components
+        // Update all SoundSourceAudio components in loaded scenes.
         UpdateAllSoundSourceAudioComponents();
     }
 
     private void UpdateAllSoundSourceAudioComponents()
     {
-        // Get all loaded scenes
+        // Get all loaded scenes.
         for (int i = 0; i < EditorSceneManager.sceneCount; i++)
         {
             var scene = EditorSceneManager.GetSceneAt(i);
-
             if (scene.isLoaded)
             {
                 var rootObjects = scene.GetRootGameObjects();
-
                 foreach (var rootObject in rootObjects)
                 {
                     var components = rootObject.GetComponentsInChildren<SoundSourceAudio>(true);
-
                     foreach (var component in components)
                     {
-                        // Update the cacheFilePath in case it's different
+                        // Update the cacheFilePath in case it's different.
                         component.cacheFilePath = cacheFilePath;
-
-                        // Reload the audio library
+                        // Reload the audio library.
                         component.LoadAudioLibrary();
-
-                        // Mark the component and scene as dirty
+                        // Mark the component and scene as dirty.
                         EditorUtility.SetDirty(component);
                         EditorSceneManager.MarkSceneDirty(component.gameObject.scene);
                     }
                 }
             }
         }
-
-        // Save all open scenes
+        // Save all open scenes.
         EditorSceneManager.SaveOpenScenes();
-
-        // Refresh the editor views
+        // Refresh the editor views.
         InternalEditorUtility.RepaintAllViews();
     }
 
@@ -144,46 +206,43 @@ public class AudioDataCacher : EditorWindow
         {
             string dirName = Path.GetFileName(directory);
             string newRelativePath = string.IsNullOrEmpty(relativePath) ? dirName : Path.Combine(relativePath, dirName);
-
             AudioCategory category = new AudioCategory
             {
                 categoryName = newRelativePath.Replace("\\", "/"),
                 audioItems = new List<AudioItem>()
             };
 
-            // Check for Parameters.txt in this directory
+            // Check for Parameters.txt in this directory.
             string parametersFilePath = Path.Combine(directory, "Parameters.txt");
             List<Parameter> parameters = null;
-
             if (File.Exists(parametersFilePath))
             {
                 parameters = ParseParametersFile(parametersFilePath);
             }
 
-            // Get all audio files in this directory
+            // Get all audio files in this directory.
             var audioFiles = Directory.GetFiles(directory, "*.mp3")
                                       .Concat(Directory.GetFiles(directory, "*.wav"))
                                       .ToArray();
-
             foreach (var audioFile in audioFiles)
             {
                 AudioItem item = new AudioItem
                 {
                     displayName = Path.GetFileNameWithoutExtension(audioFile),
-                    audioFilePath = audioFile, // Absolute path
+                    audioFilePath = audioFile, // Absolute path.
                     parametersFilePath = File.Exists(parametersFilePath) ? parametersFilePath : null,
                     parameters = parameters ?? new List<Parameter>()
                 };
                 category.audioItems.Add(item);
             }
 
-            // Only add category if it contains audio items
+            // Only add the category if it contains audio items.
             if (category.audioItems.Count > 0)
             {
                 categories.Add(category);
             }
 
-            // Recursively scan subdirectories
+            // Recursively scan subdirectories.
             ScanFolder(directory, categories, newRelativePath);
         }
     }
@@ -199,7 +258,6 @@ public class AudioDataCacher : EditorWindow
             {
                 string key = keyValue[0].Trim();
                 string range = keyValue[1].Trim();
-
                 var minMax = range.Split('-');
                 if (minMax.Length == 2)
                 {

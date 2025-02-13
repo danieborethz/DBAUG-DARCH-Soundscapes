@@ -3397,7 +3397,8 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: 3000
-  stringTagMap: {}
+  stringTagMap:
+    RenderType: Transparent
   disabledShaderPasses: []
   m_LockedProperties: 
   m_SavedProperties:
@@ -4895,7 +4896,7 @@ MonoBehaviour:
   selectedAudioIndex: 0
   selectedAudioName: Car_engine_low_Gear3x
   sourceTypeSelection: 0
-  sourceSelection: 6
+  sourceSelection: 0
   multiSize: 4.42
   monoSources: 16
   stereoSources: 8
@@ -8913,7 +8914,8 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: 3000
-  stringTagMap: {}
+  stringTagMap:
+    RenderType: Transparent
   disabledShaderPasses: []
   m_LockedProperties: 
   m_SavedProperties:
@@ -11320,8 +11322,8 @@ MonoBehaviour:
   _cacheFilePath: Assets/AudioDataCache.json
   selectedCategoryIndex: 2
   selectedCategoryName: Cars
-  selectedAudioIndex: 8
-  selectedAudioName: Traktor_passing
+  selectedAudioIndex: 2
+  selectedAudioName: Car_engine_highway_3
   sourceTypeSelection: 0
   sourceSelection: 9
   multiSize: 1
