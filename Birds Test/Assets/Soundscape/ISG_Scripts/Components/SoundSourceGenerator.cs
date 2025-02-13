@@ -158,9 +158,10 @@ public class SoundSourceGenerator : SoundSource
     protected override void CalculateRelativePosition()
     {
         // If wind & globally enabled, use forest center - camera
-        if (selectedGeneratorTypeIndex == 1 && SceneManager.Instance.EnableWind)
+        if (selectedGeneratorTypeIndex == 1 && SceneManager.Instance.EnableWind && transform.childCount > 1)
         {
             relativePosition = forestCenter - mainCamera.transform.position;
+            Debug.Log("Calculate relative position custom");
         }
         // If water = Flow, use flowWaterCenter
         else if (selectedGeneratorTypeIndex == 0 && selectedWaterTypeIndex == 0)
@@ -170,6 +171,7 @@ public class SoundSourceGenerator : SoundSource
         else
         {
             // fallback
+            Debug.Log("Calculate relative position fallback");
             base.CalculateRelativePosition();
         }
     }

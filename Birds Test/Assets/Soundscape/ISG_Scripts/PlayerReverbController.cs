@@ -138,6 +138,7 @@ public class PlayerReverbController : MonoBehaviour
             msg.values.Add(accumulatedRoomSize);
             osc.Send(msg);
             lastSentAccumulatedRoomSize = accumulatedRoomSize;
+            Debug.Log(accumulatedRoomSize);
         }
 
         if (!Mathf.Approximately(lastSentAccumulatedDecayTime, accumulatedDecayTime))
@@ -146,6 +147,7 @@ public class PlayerReverbController : MonoBehaviour
             msg.values.Add(accumulatedDecayTime);
             osc.Send(msg);
             lastSentAccumulatedDecayTime = accumulatedDecayTime;
+            Debug.Log(accumulatedDecayTime);
         }
 
         if (!Mathf.Approximately(lastSentAccumulatedWetDryMix, accumulatedWetDryMix))
@@ -154,6 +156,7 @@ public class PlayerReverbController : MonoBehaviour
             msg.values.Add(accumulatedWetDryMix);
             osc.Send(msg);
             lastSentAccumulatedWetDryMix = accumulatedWetDryMix;
+            Debug.Log(accumulatedWetDryMix);
         }
 
         if (!Mathf.Approximately(lastSentAccumulatedEq, accumulatedEq))
@@ -162,6 +165,7 @@ public class PlayerReverbController : MonoBehaviour
             msg.values.Add(accumulatedEq);
             osc.Send(msg);
             lastSentAccumulatedEq = accumulatedEq;
+            Debug.Log(accumulatedEq);
         }
     }
 }
