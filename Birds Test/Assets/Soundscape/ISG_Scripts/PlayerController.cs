@@ -5,8 +5,8 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     [Header("Movement Settings")]
-    public float walkSpeed = 5f;
-    public float flightSpeed = 10f;
+    public float walkSpeed = 10f;
+    //public float flightSpeed = 10f;
     public float turnSpeed = 360f;
 
     [Header("Flight Mode Settings")]
@@ -37,10 +37,10 @@ public class PlayerController : MonoBehaviour
         HandleMovementInput();
         HandleMouseLook();
 
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            ToggleFlightMode();
-        }
+        /* if (Input.GetKeyDown(KeyCode.Space))
+         {
+             ToggleFlightMode();
+         }*/
     }
 
     void HandleMovementInput()
@@ -70,16 +70,17 @@ public class PlayerController : MonoBehaviour
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
         float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
 
-        // Adjust pitch and clamp it to avoid over-rotation
+        yaw += mouseX;
         pitch -= mouseY;
         pitch = Mathf.Clamp(pitch, -90f, 90f);
 
-        yaw += mouseX;
+        // Rotate the parent for yaw (this keeps the collider aligned with the ground)
+        transform.rotation = Quaternion.Euler(0f, yaw, 0f);
 
-        // Apply rotation
-        transform.Rotate(Vector3.up * mouseX);
-        Camera.main.transform.localRotation = Quaternion.Euler(pitch, yaw, 0f);
+        // Rotate only the camera for pitch (local rotation only)
+        Camera.main.transform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
     }
+
 
     void FixedUpdate()
     {
@@ -104,8 +105,8 @@ public class PlayerController : MonoBehaviour
 
     void FlyMovement()
     {
-        Vector3 flyDirection = transform.forward * movement.z + transform.right * movement.x + transform.up * movement.y;
-        rb.MovePosition(rb.position + flyDirection * flightSpeed * Time.fixedDeltaTime);
+        // Vector3 flyDirection = transform.forward * movement.z + transform.right * movement.x + transform.up * movement.y;
+        // rb.MovePosition(rb.position + flyDirection * flightSpeed * Time.fixedDeltaTime);
     }
 
     void ToggleFlightMode()
