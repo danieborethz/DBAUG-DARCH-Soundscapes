@@ -9,6 +9,8 @@ public class SceneManagerEditor : Editor
     private SerializedProperty distanceScaleProp;
     private SerializedProperty enableWindProp;
     private SerializedProperty enableWaterProp;
+    // NEW: add property for ambisonic toggle
+    private SerializedProperty enableAmbisonicProp;
 
     // NEW: references to the global reverb parameters
     private SerializedProperty globalRoomSizeProp;
@@ -30,6 +32,9 @@ public class SceneManagerEditor : Editor
         distanceScaleProp = serializedObject.FindProperty("distanceScale");
         enableWindProp = serializedObject.FindProperty("enableWind");
         enableWaterProp = serializedObject.FindProperty("enableWater");
+
+        // NEW: find ambisonic audio toggle property
+        enableAmbisonicProp = serializedObject.FindProperty("enableAmbisonic");
 
         // NEW: find global reverb properties
         globalRoomSizeProp = serializedObject.FindProperty("globalRoomSize");
@@ -62,22 +67,32 @@ public class SceneManagerEditor : Editor
         EditorGUILayout.PropertyField(globalEqProp);
 
         EditorGUILayout.Space();
-        // Draw the ambisonic dropdown if available
-        if (sceneManager.ambisonicAudioItems != null && sceneManager.ambisonicAudioItems.Count > 0)
-        {
-            EditorGUILayout.LabelField("Ambisonic Audio Selection", EditorStyles.boldLabel);
-            int currentIndex = selectedAmbisonicIndexProp.intValue;
-            int newIndex = EditorGUILayout.Popup("Ambisonic File", currentIndex, ambisonicAudioNames);
+        EditorGUILayout.LabelField("Ambisonic Audio Settings", EditorStyles.boldLabel);
+        // NEW: Draw toggle for ambisonic audio
+        EditorGUILayout.PropertyField(enableAmbisonicProp, new GUIContent("Enable Ambisonic Audio"));
 
-            if (newIndex != currentIndex && newIndex >= 0 && newIndex < ambisonicAudioNames.Length)
+        if (enableAmbisonicProp.boolValue)
+        {
+            // Draw the ambisonic dropdown if available
+            if (sceneManager.ambisonicAudioItems != null && sceneManager.ambisonicAudioItems.Count > 0)
             {
-                selectedAmbisonicIndexProp.intValue = newIndex;
-                ambientSoundFileProp.stringValue = sceneManager.ambisonicAudioItems[newIndex].audioFilePath;
+                int currentIndex = selectedAmbisonicIndexProp.intValue;
+                int newIndex = EditorGUILayout.Popup("Ambisonic File", currentIndex, ambisonicAudioNames);
+
+                if (newIndex != currentIndex && newIndex >= 0 && newIndex < ambisonicAudioNames.Length)
+                {
+                    selectedAmbisonicIndexProp.intValue = newIndex;
+                    ambientSoundFileProp.stringValue = sceneManager.ambisonicAudioItems[newIndex].audioFilePath;
+                }
+            }
+            else
+            {
+                EditorGUILayout.HelpBox("No ambisonic category or audio files found. Make sure your JSON file contains a 'ambisonics' category.", MessageType.Info);
             }
         }
         else
         {
-            EditorGUILayout.HelpBox("No ambisonic category or audio files found. Make sure your JSON file contains a 'ambisonics' category.", MessageType.Info);
+            EditorGUILayout.HelpBox("Ambisonic audio is disabled.", MessageType.Info);
         }
 
         serializedObject.ApplyModifiedProperties();

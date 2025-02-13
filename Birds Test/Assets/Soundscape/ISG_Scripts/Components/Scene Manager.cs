@@ -38,6 +38,10 @@ public class SceneManager : MonoBehaviour
     [HideInInspector] // Hide from default inspector so we can show a dropdown instead
     public string ambientSoundFile = "";
 
+    // NEW: Toggle to enable/disable ambisonic sound
+    [SerializeField]
+    private bool enableAmbisonic = true;
+
     [Range(0f, 5f)]
     public float distanceScale = 0.5f;
 
@@ -111,6 +115,20 @@ public class SceneManager : MonoBehaviour
             {
                 enableWater = value;
                 OnEnableWaterChanged?.Invoke(enableWater);
+                SendChangedMessages();
+            }
+        }
+    }
+
+    // NEW: Property to access the ambisonic toggle (if you need to reference it in code)
+    public bool EnableAmbisonic
+    {
+        get => enableAmbisonic;
+        set
+        {
+            if (enableAmbisonic != value)
+            {
+                enableAmbisonic = value;
                 SendChangedMessages();
             }
         }
@@ -260,12 +278,21 @@ public class SceneManager : MonoBehaviour
             lastSentDistanceScale = distanceScale;
         }
 
-        if (ambientSoundFile != lastSentAmbientSoundFile && !string.IsNullOrEmpty(ambientSoundFile))
+        // NEW: Only send the ambisonic OSC message if enabled
+        if (enableAmbisonic)
         {
-            OscMessage message = new OscMessage { address = "/aformat/1" };
-            message.values.Add(ambientSoundFile);
-            osc.Send(message);
-            lastSentAmbientSoundFile = ambientSoundFile;
+            if (ambientSoundFile != lastSentAmbientSoundFile && !string.IsNullOrEmpty(ambientSoundFile))
+            {
+                OscMessage message = new OscMessage { address = "/aformat/1" };
+                message.values.Add(ambientSoundFile);
+                osc.Send(message);
+                lastSentAmbientSoundFile = ambientSoundFile;
+            }
+        }
+        else
+        {
+            // Optionally, reset the cached ambient sound so it will send again when re-enabled.
+            lastSentAmbientSoundFile = "";
         }
     }
 

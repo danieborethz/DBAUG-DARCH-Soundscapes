@@ -114,7 +114,6 @@ public class SoundSourceGenerator : SoundSource
                 break;
             }
         }
-        Debug.Log(debugMesh);
     }
 
     private void OnDestroy()
@@ -235,7 +234,7 @@ public class SoundSourceGenerator : SoundSource
         // +1 so internal index 0..7 => OSC channel 1..8
         int customSourceValue = SourceSelection + 1;
 
-        Debug.Log($"[SendMessages] genType={genType}, SourceSelection={SourceSelection}, customSourceValue={customSourceValue}");
+       // Debug.Log($"[SendMessages] genType={genType}, SourceSelection={SourceSelection}, customSourceValue={customSourceValue}");
 
         // Send the "status" if changed
         if (lastSentEnableGenerator != enableGenerator)

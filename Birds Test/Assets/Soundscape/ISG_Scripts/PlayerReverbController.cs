@@ -86,11 +86,6 @@ public class PlayerReverbController : MonoBehaviour
             accumulatedWetDryMix /= totalWeight;
             accumulatedEq /= totalWeight;
         }*/
-
-        Debug.Log("Room size: " + accumulatedRoomSize);
-        Debug.Log("Decaytime: " + accumulatedDecayTime);
-        Debug.Log("Mix: " + accumulatedWetDryMix);
-        Debug.Log("EQ: " + accumulatedEq);
     }
 
     private float CalculateZoneWeight(ReverbZone zone)
@@ -108,7 +103,6 @@ public class PlayerReverbController : MonoBehaviour
         // 3) distance=1 means exactly on the zone boundary. 
         //    distance>1 is outside the zone. 
         float distance = normalizedPos.magnitude;
-       // Debug.Log(distance);
 
         // 4) Incorporate fadeRadius:
         //    If distance >= 1 + fadeRadius => weight=0

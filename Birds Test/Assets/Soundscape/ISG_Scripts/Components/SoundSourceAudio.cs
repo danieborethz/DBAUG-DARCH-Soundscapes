@@ -121,7 +121,7 @@ public class SoundSourceAudio : SoundSource
             message.values.Add(filePath);
             osc.Send(message);
 
-            Debug.Log($"Current audio item is: {filePath}");
+            //Debug.Log($"Current audio item is: {filePath}");
         }
     }
 
