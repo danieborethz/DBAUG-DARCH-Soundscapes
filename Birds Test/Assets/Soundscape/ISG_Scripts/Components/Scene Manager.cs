@@ -53,10 +53,8 @@ public class SceneManager : MonoBehaviour
     {
         get
         {
-            if (string.IsNullOrEmpty(_cacheFilePath))
-            {
-                _cacheFilePath = Path.Combine(Application.dataPath, "AudioDataCache.json");
-            }
+            
+            _cacheFilePath = Path.Combine(Application.dataPath, "AudioDataCache.json");
             return _cacheFilePath;
         }
         set
