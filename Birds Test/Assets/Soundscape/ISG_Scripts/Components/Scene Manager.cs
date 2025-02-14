@@ -83,11 +83,15 @@ public class SceneManager : MonoBehaviour
     private float lastWindIntensity;
     private float lastDistanceScale;
 
+    private bool lastEnableAmbisonic;
+
     private bool lastSentEnableWind;
     private bool lastSentEnableWater;
     private float lastSentWindIntensity;
     private string lastSentAmbientSoundFile;
     private float lastSentDistanceScale;
+
+    private bool lastSentEnableAmbisonic;
 
     private MeshRenderer[] windMeshes;
 
@@ -153,12 +157,14 @@ public class SceneManager : MonoBehaviour
         lastEnableWater = enableWater;
         lastWindIntensity = windIntensity;
         lastDistanceScale = distanceScale;
+        lastEnableAmbisonic = enableAmbisonic;
 
         lastSentEnableWind = !enableWind;
         lastSentEnableWater = !enableWater;
         lastSentWindIntensity = float.MinValue;
         lastSentDistanceScale = float.MinValue;
         lastSentAmbientSoundFile = null;
+        lastSentEnableAmbisonic = !enableAmbisonic;
 
         FindWindMaterialMeshes();
         UpdateWindMaterials();
@@ -199,6 +205,12 @@ public class SceneManager : MonoBehaviour
 
         if (ambientSoundFile != lastSentAmbientSoundFile)
         {
+            SendChangedMessages();
+        }
+
+        if (enableAmbisonic != lastSentEnableAmbisonic)
+        {
+            lastEnableAmbisonic = enableAmbisonic;
             SendChangedMessages();
         }
     }
@@ -278,12 +290,20 @@ public class SceneManager : MonoBehaviour
             lastSentDistanceScale = distanceScale;
         }
 
+        if (lastSentEnableAmbisonic != enableAmbisonic)
+        {
+            OscMessage message = new OscMessage { address = "/source/bformat/1/status" };
+            message.values.Add(enableAmbisonic ? 1 : 0);
+            osc.Send(message);
+            lastSentEnableAmbisonic = enableAmbisonic;
+        }
+
         // NEW: Only send the ambisonic OSC message if enabled
         if (enableAmbisonic)
         {
             if (ambientSoundFile != lastSentAmbientSoundFile && !string.IsNullOrEmpty(ambientSoundFile))
             {
-                OscMessage message = new OscMessage { address = "/source/bformat/1" };
+                OscMessage message = new OscMessage { address = "/source/bformat/1/soundpath" };
                 message.values.Add(ambientSoundFile);
                 osc.Send(message);
                 lastSentAmbientSoundFile = ambientSoundFile;
