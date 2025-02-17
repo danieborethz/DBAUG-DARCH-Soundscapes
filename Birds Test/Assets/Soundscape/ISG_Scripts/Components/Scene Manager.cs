@@ -282,7 +282,7 @@ public class SceneManager : MonoBehaviour
 
         if (Math.Abs(lastSentDistanceScale - distanceScale) > Mathf.Epsilon)
         {
-            OscMessage message = new OscMessage { address = "/master/scale dist" };
+            OscMessage message = new OscMessage { address = "/master/scaledist" };
             message.values.Add(distanceScale);
             osc.Send(message);
             lastSentDistanceScale = distanceScale;
