@@ -165,8 +165,10 @@ public class AudioDataCacher : EditorWindow
         AssetDatabase.Refresh();
         Debug.Log("Audio data cached successfully at: " + cacheFilePath);
 
+        UpdateAllSoundSourceAudioPrefabs();
         // Update all SoundSourceAudio components in loaded scenes.
         UpdateAllSoundSourceAudioComponents();
+
     }
 
     private void UpdateAllSoundSourceAudioComponents()
@@ -194,6 +196,7 @@ public class AudioDataCacher : EditorWindow
                 }
             }
         }
+
         // Save all open scenes.
         EditorSceneManager.SaveOpenScenes();
         // Refresh the editor views.
@@ -289,4 +292,36 @@ public class AudioDataCacher : EditorWindow
         }
         return parameters;
     }
+
+    private void UpdateAllSoundSourceAudioPrefabs()
+    {
+        // Find all prefabs in the project.
+        string[] prefabGuids = AssetDatabase.FindAssets("t:Prefab");
+        foreach (string guid in prefabGuids)
+        {
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            GameObject prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (prefabAsset == null)
+                continue;
+
+            // Check if the prefab has a SoundSourceAudio component.
+            SoundSourceAudio soundSource = prefabAsset.GetComponent<SoundSourceAudio>();
+            if (soundSource != null)
+            {
+                // Update properties as needed.
+                soundSource.cacheFilePath = cacheFilePath;
+                soundSource.LoadAudioLibrary();
+
+                // Mark the prefab as dirty and save changes.
+                EditorUtility.SetDirty(prefabAsset);
+                PrefabUtility.SavePrefabAsset(prefabAsset);
+
+                Debug.Log("Updated prefab: " + path);
+            }
+        }
+
+        // Refresh the AssetDatabase to reflect the changes.
+        AssetDatabase.Refresh();
+    }
+
 }
