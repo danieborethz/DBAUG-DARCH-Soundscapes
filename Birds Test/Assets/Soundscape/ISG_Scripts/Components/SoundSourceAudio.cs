@@ -101,6 +101,11 @@ public class SoundSourceAudio : SoundSource
         // Any additional update logic specific to SoundSourceAudio
     }
 
+    private void Reset()
+    {
+        LoadAudioLibrary();
+    }
+
     void UpdateSoundFile()
     {
         if (osc != null && currentAudioItems != null && selectedAudioIndex < currentAudioItems.Count)
