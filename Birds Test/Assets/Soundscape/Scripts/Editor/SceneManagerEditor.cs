@@ -12,6 +12,9 @@ public class SceneManagerEditor : Editor
     // NEW: add property for ambisonic toggle
     private SerializedProperty enableAmbisonicProp;
 
+    // NEW: property for occlusion threshold
+    private SerializedProperty occlusionDiameterThresholdProp;
+
     // NEW: references to the global reverb parameters
     private SerializedProperty globalRoomSizeProp;
     private SerializedProperty globalDecayTimeProp;
@@ -35,6 +38,9 @@ public class SceneManagerEditor : Editor
 
         // NEW: find ambisonic audio toggle property
         enableAmbisonicProp = serializedObject.FindProperty("enableAmbisonic");
+
+        // NEW: find occlusion threshold property
+        occlusionDiameterThresholdProp = serializedObject.FindProperty("occlusionDiameterThreshold");
 
         // NEW: find global reverb properties
         globalRoomSizeProp = serializedObject.FindProperty("globalRoomSize");
@@ -94,6 +100,11 @@ public class SceneManagerEditor : Editor
         {
             EditorGUILayout.HelpBox("Ambisonic audio is disabled.", MessageType.Info);
         }
+
+        // NEW: Draw the occlusion threshold setting
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Occlusion Settings", EditorStyles.boldLabel);
+        EditorGUILayout.PropertyField(occlusionDiameterThresholdProp, new GUIContent("Occlusion Diameter Threshold"));
 
         serializedObject.ApplyModifiedProperties();
     }

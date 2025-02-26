@@ -45,6 +45,11 @@ public class SceneManager : MonoBehaviour
     [Range(0f, 5f)]
     public float distanceScale = 0.5f;
 
+    // NEW: Occlusion threshold for raycasted object diameter
+    [Header("Occlusion Settings")]
+    [SerializeField]
+    private float occlusionDiameterThreshold = 1.0f;
+
     [SerializeField]
     [HideInInspector]
     private string _cacheFilePath;
@@ -53,7 +58,6 @@ public class SceneManager : MonoBehaviour
     {
         get
         {
-            
             _cacheFilePath = Path.Combine(Application.dataPath, "AudioDataCache.json");
             return _cacheFilePath;
         }
@@ -135,6 +139,9 @@ public class SceneManager : MonoBehaviour
             }
         }
     }
+
+    // NEW: Property to access the occlusion threshold
+    public float OcclusionDiameterThreshold => occlusionDiameterThreshold;
 
     void Awake()
     {
