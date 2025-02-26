@@ -90,6 +90,7 @@ public class SoundSourceAudio : SoundSource
     protected override List<ParameterValue> ParameterValues => parameterValues;
 
     private bool enableAudio = true;
+    private bool isQuitting = false;
 
 
     protected override void Start()
@@ -118,8 +119,14 @@ public class SoundSourceAudio : SoundSource
 
     private void OnDisable()
     {
+        if (isQuitting) return;
         enableAudio = false;
         UpdateStatus();
+    }
+
+    private void OnApplicationQuit()
+    {
+        isQuitting = true;
     }
 
     void UpdateSoundFile()

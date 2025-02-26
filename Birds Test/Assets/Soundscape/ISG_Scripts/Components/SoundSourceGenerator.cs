@@ -54,6 +54,8 @@ public class SoundSourceGenerator : SoundSource
 
     private GameObject debugMesh;
 
+    private bool isQuitting = false;
+
     public int SourceSelectionIndex
     {
         get => sourceSelection;
@@ -123,7 +125,12 @@ public class SoundSourceGenerator : SoundSource
 
     private void OnDisable()
     {
+        if (isQuitting) return;
         enableGenerator = false;
+    }
+    private void OnApplicationQuit()
+    {
+        isQuitting = true;
     }
 
     private void OnDestroy()
