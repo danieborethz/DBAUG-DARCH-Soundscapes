@@ -154,7 +154,7 @@ public class SoundSourceAudio : SoundSource
         {
             address = $"/source/{SourceType}/{SourceSelection + 1}/status"
         };
-        msg.values.Add(enableAudio);
+        msg.values.Add((enableAudio) ? 1 : 0);
         osc.Send(msg);
 
     }
