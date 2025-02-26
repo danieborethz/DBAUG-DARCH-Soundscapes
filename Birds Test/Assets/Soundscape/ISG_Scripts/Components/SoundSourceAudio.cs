@@ -89,10 +89,14 @@ public class SoundSourceAudio : SoundSource
     protected override float MultiSize => multiSize;
     protected override List<ParameterValue> ParameterValues => parameterValues;
 
+    private bool enableAudio = true;
+
+
     protected override void Start()
     {
         base.Start();
         UpdateSoundFile();
+        UpdateStatus();
     }
 
     protected override void Update()
@@ -104,6 +108,18 @@ public class SoundSourceAudio : SoundSource
     private void Reset()
     {
         LoadAudioLibrary();
+    }
+
+    private void OnEnable()
+    {
+        enableAudio = true;
+        UpdateStatus();
+    }
+
+    private void OnDisable()
+    {
+        enableAudio = false;
+        UpdateStatus();
     }
 
     void UpdateSoundFile()
@@ -128,6 +144,17 @@ public class SoundSourceAudio : SoundSource
 
             //Debug.Log($"Current audio item is: {filePath}");
         }
+    }
+
+    private void UpdateStatus()
+    {
+        OscMessage msg = new OscMessage
+        {
+            address = $"/source/{SourceType}/{SourceSelection + 1}/status"
+        };
+        msg.values.Add(enableAudio);
+        osc.Send(msg);
+
     }
 
     public void LoadAudioLibrary()

@@ -116,6 +116,16 @@ public class SoundSourceGenerator : SoundSource
         }
     }
 
+    private void OnEnable()
+    {
+        enableGenerator = true;
+    }
+
+    private void OnDisable()
+    {
+        enableGenerator = false;
+    }
+
     private void OnDestroy()
     {
         if (SceneManager.Instance != null)
