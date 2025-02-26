@@ -148,6 +148,8 @@ public class SoundSourceAudio : SoundSource
 
     private void UpdateStatus()
     {
+        if (osc == null) return;
+
         OscMessage msg = new OscMessage
         {
             address = $"/source/{SourceType}/{SourceSelection + 1}/status"
