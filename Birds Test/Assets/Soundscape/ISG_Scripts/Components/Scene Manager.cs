@@ -231,7 +231,6 @@ public class SceneManager : MonoBehaviour
             {
                 OscMessage message = new OscMessage { address = "/source/bformat/1/soundpath" };
                 message.values.Add(ambientSoundFile);
-                Debug.Log(ambientSoundFile);
                 osc.Send(message);
                 lastSentAmbientSoundFile = ambientSoundFile;
             }
