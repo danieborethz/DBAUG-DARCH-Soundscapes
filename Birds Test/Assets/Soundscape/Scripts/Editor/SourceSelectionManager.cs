@@ -40,7 +40,7 @@ public static class SourceSelectionManager
     }
 
     // Updated function to get all SoundSource components in loaded scenes, read their source data, and save it to the map.
-    private static void UpdateSources()
+    public static void UpdateSources()
     {
         // Clear all the entries in the dictionary.
         foreach (var key in assignedMap.Keys)

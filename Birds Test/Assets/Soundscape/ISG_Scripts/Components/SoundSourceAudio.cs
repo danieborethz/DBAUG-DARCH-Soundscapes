@@ -92,6 +92,14 @@ public class SoundSourceAudio : SoundSource
     private bool enableAudio = true;
     private bool isQuitting = false;
 
+    [SerializeField]
+    [HideInInspector]
+    public bool _initialized = false;
+
+    private void Reset()
+    {
+        LoadAudioLibrary();
+    }
 
     protected override void Start()
     {
@@ -104,11 +112,6 @@ public class SoundSourceAudio : SoundSource
     {
         base.Update();
         // Any additional update logic specific to SoundSourceAudio
-    }
-
-    private void Reset()
-    {
-        LoadAudioLibrary();
     }
 
     private void OnEnable()
@@ -131,6 +134,9 @@ public class SoundSourceAudio : SoundSource
 
     void UpdateSoundFile()
     {
+        // If sourceSelection is -1, skip
+        if (sourceSelection == -1) return;
+
         if (osc != null && currentAudioItems != null && selectedAudioIndex < currentAudioItems.Count)
         {
             OscMessage message = new OscMessage
@@ -148,13 +154,14 @@ public class SoundSourceAudio : SoundSource
 
             message.values.Add(filePath);
             osc.Send(message);
-
-            //Debug.Log($"Current audio item is: {filePath}");
         }
     }
 
+
     private void UpdateStatus()
     {
+        // If sourceSelection is -1, skip
+        if (sourceSelection == -1) return;
         if (osc == null) return;
 
         OscMessage msg = new OscMessage
