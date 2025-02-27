@@ -141,7 +141,7 @@ public class SoundSource : MonoBehaviour
         {
             OscMessage nameMessage = new OscMessage
             {
-                address = $"/name/{source}/"
+                address = $"/name{source}"
             };
             nameMessage.values.Add(this.name);
             osc.Send(nameMessage);
