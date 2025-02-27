@@ -231,6 +231,7 @@ public class SceneManager : MonoBehaviour
             {
                 OscMessage message = new OscMessage { address = "/source/bformat/1/soundpath" };
                 message.values.Add(ambientSoundFile);
+                Debug.Log(ambientSoundFile);
                 osc.Send(message);
                 lastSentAmbientSoundFile = ambientSoundFile;
             }
@@ -259,12 +260,27 @@ public class SceneManager : MonoBehaviour
             {
                 ambisonicAudioItems = new List<AudioItem>();
             }
+
+            // Immediately update the ambientSoundFile based on the selected index.
+            if (ambisonicAudioItems.Count > 0)
+            {
+                if (selectedAmbisonicIndex < 0 || selectedAmbisonicIndex >= ambisonicAudioItems.Count)
+                {
+                    selectedAmbisonicIndex = 0;
+                }
+                ambientSoundFile = ambisonicAudioItems[selectedAmbisonicIndex].audioFilePath;
+            }
+            else
+            {
+                ambientSoundFile = "";
+            }
         }
         else
         {
             Debug.LogError("Cache file not found at: " + cacheFilePath);
         }
     }
+
 
     private void OnApplicationQuit()
     {

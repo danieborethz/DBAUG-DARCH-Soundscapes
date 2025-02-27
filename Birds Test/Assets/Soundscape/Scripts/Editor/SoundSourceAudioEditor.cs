@@ -2,7 +2,6 @@ using UnityEngine;
 using UnityEditor;
 using System.Linq;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System;
 
 [CustomEditor(typeof(SoundSourceAudio), true)]
@@ -38,9 +37,6 @@ public class SoundSourceAudioEditor : Editor
         
         EnsureSourceIsNotTaken(); // 2) If source is taken -> next free or -1
 
-
-        // Already does some assignment to SourceSelectionManager,
-        // but the main logic for the newly created component will happen in Reset().
     }
 
     private void EnsureSourceIsNotTaken()

@@ -38,8 +38,6 @@ public class SceneManagerEditor : Editor
         // NEW: find ambisonic audio toggle property
         enableAmbisonicProp = serializedObject.FindProperty("enableAmbisonic");
 
-        // NEW: find occlusion threshold property
-
         // NEW: find global reverb properties
         globalRoomSizeProp = serializedObject.FindProperty("globalRoomSize");
         globalDecayTimeProp = serializedObject.FindProperty("globalDecayTime");
@@ -49,10 +47,23 @@ public class SceneManagerEditor : Editor
         selectedAmbisonicIndexProp = serializedObject.FindProperty("selectedAmbisonicIndex");
         ambientSoundFileProp = serializedObject.FindProperty("ambientSoundFile");
 
-
+        // Load the audio library and update the dropdown names.
         sceneManager.LoadAudioLibrary();
         UpdateAmbisonicAudioNames();
+
+        // Ensure the selected index is valid.
+        if (sceneManager.ambisonicAudioItems != null && sceneManager.ambisonicAudioItems.Count > 0)
+        {
+            if (selectedAmbisonicIndexProp.intValue < 0 ||
+                selectedAmbisonicIndexProp.intValue >= sceneManager.ambisonicAudioItems.Count)
+            {
+                selectedAmbisonicIndexProp.intValue = 0;
+            }
+            // Update the underlying ambientSoundFile string based on the current selection.
+            ambientSoundFileProp.stringValue = sceneManager.ambisonicAudioItems[selectedAmbisonicIndexProp.intValue].audioFilePath;
+        }
     }
+
 
     public override void OnInspectorGUI()
     {
