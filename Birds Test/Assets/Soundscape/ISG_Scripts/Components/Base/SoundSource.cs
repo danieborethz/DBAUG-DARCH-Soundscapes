@@ -20,6 +20,8 @@ public class SoundSource : MonoBehaviour
     private float lastMultiSize = -1f;
     private Dictionary<string, float> lastParameterValues = new Dictionary<string, float>();
 
+    private int lastSourceSelection = -1;
+
     // Properties required for SendMessages
     protected virtual string SourceType { get; }
     protected virtual int SourceSelection { get; }
@@ -134,6 +136,18 @@ public class SoundSource : MonoBehaviour
 
         // Define an epsilon for float comparisons.
         const float epsilon = 0.0001f;
+
+        if (Mathf.Abs(lastSourceSelection - sourceSelection) > epsilon)
+        {
+            OscMessage nameMessage = new OscMessage
+            {
+                address = $"/name/{source}/"
+            };
+            nameMessage.values.Add(this.name);
+            osc.Send(nameMessage);
+
+            lastSourceSelection = sourceSelection;
+        }
 
         // Send relative position only if it changed (using Vector3.Distance for tolerance)
         if (Vector3.Distance(lastRelativePosition, relativePosition) > epsilon)
