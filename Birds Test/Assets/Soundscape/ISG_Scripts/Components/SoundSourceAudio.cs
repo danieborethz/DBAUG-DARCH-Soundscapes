@@ -159,7 +159,7 @@ public class SoundSourceAudio : SoundSource
 
         OscMessage msg = new OscMessage
         {
-            address = $"/source/{SourceType}/{SourceSelection + 1}/status"
+            address = $"/status/source/{SourceType}/{SourceSelection + 1}/status"
         };
         msg.values.Add((enableAudio) ? 1 : 0);
         osc.Send(msg);
