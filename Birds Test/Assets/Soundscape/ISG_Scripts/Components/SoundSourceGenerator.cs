@@ -166,6 +166,7 @@ public class SoundSourceGenerator : SoundSource
             {
                 Vector3 cameraPosition = mainCamera.transform.position;
                 Vector3 closestPoint = Physics.ClosestPoint(cameraPosition, meshCollider, meshCollider.transform.position, meshCollider.transform.rotation);
+                closestPoint.y = cameraPosition.y;
                 flowWaterCenter = closestPoint - cameraPosition;
 
                 if (debugMesh != null)
