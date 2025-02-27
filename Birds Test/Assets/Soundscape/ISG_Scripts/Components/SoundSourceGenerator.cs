@@ -77,10 +77,8 @@ public class SoundSourceGenerator : SoundSource
             AddOrReplaceMeshCollider();
         }
 
-        SceneManager.Instance.OnEnableWindChanged += HandleEnableWindChanged;
-
         // If started as Wind (1) and wind is globally enabled
-        if (selectedGeneratorTypeIndex == 1 && SceneManager.Instance.EnableWind)
+        if (selectedGeneratorTypeIndex == 1)
         {
             CalculateBounds();
         }
@@ -137,30 +135,13 @@ public class SoundSourceGenerator : SoundSource
         isQuitting = true;
     }
 
-    private void OnDestroy()
-    {
-        if (SceneManager.Instance != null)
-        {
-            SceneManager.Instance.OnEnableWindChanged -= HandleEnableWindChanged;
-        }
-    }
-
-    private void HandleEnableWindChanged(bool isEnabled)
-    {
-        // If I'm "Wind" and wind just got enabled, recalc bounds & re-send
-        if (selectedGeneratorTypeIndex == 1 && isEnabled)
-        {
-            CalculateBounds();
-            SendMessages();
-        }
-    }
 
     protected override void Update()
     {
         base.Update();
 
         // If water (0), type=Flow (0), and globally water is enabled, track the flow
-        if (selectedGeneratorTypeIndex == 0 && selectedWaterTypeIndex == 0 && SceneManager.Instance.EnableWater)
+        if (selectedGeneratorTypeIndex == 0 && selectedWaterTypeIndex == 0)
         {
             if (meshCollider != null && mainCamera != null)
             {
@@ -179,7 +160,7 @@ public class SoundSourceGenerator : SoundSource
     protected override void CalculateRelativePosition()
     {
         // If wind & globally enabled, use forest center - camera
-        if (selectedGeneratorTypeIndex == 1 && SceneManager.Instance.EnableWind && transform.childCount > 1)
+        if (selectedGeneratorTypeIndex == 1 && transform.childCount > 1)
         {
             relativePosition = forestCenter - mainCamera.transform.position;
             Debug.Log("Calculate relative position custom");

@@ -143,7 +143,7 @@ public class SoundSource : MonoBehaviour
             {
                 address = $"/name{source}"
             };
-            nameMessage.values.Add(this.name);
+            nameMessage.values.Add(name.Replace(" ", "_"));
             osc.Send(nameMessage);
 
             lastSourceSelection = sourceSelection;

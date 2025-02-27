@@ -10,15 +10,12 @@ public class SceneManager : MonoBehaviour
 
     protected OSC osc;
 
-    [Header("Wind Settings")]
+    [Header("Global Settings")]
     [Range(1.0f, 10f)]
     public float windIntensity = 1.0f;
-    [SerializeField]
-    private bool enableWind = true;
 
-    [Header("Water Settings")]
     [SerializeField]
-    private bool enableWater = true;
+    private float occlusionDiameterThreshold = 1.0f;
 
     // Add these parameters for when the player is not inside any local zone
     [Range(10f, 50000f)]
@@ -33,7 +30,6 @@ public class SceneManager : MonoBehaviour
     [Range(0f, -20f)]
     public float globalEq = -10f;
 
-    [Header("Audio Settings")]
     [SerializeField]
     [HideInInspector] // Hide from default inspector so we can show a dropdown instead
     public string ambientSoundFile = "";
@@ -45,10 +41,6 @@ public class SceneManager : MonoBehaviour
     [Range(0f, 5f)]
     public float distanceScale = 0.5f;
 
-    // NEW: Occlusion threshold for raycasted object diameter
-    [Header("Occlusion Settings")]
-    [SerializeField]
-    private float occlusionDiameterThreshold = 1.0f;
 
     [SerializeField]
     [HideInInspector]
@@ -74,21 +66,14 @@ public class SceneManager : MonoBehaviour
     [SerializeField, HideInInspector]
     public int selectedAmbisonicIndex = 0;
 
-    [Header("Materials and Rendering")]
     public Material windMaterial;
 
-    public event Action<bool> OnEnableWindChanged;
-    public event Action<bool> OnEnableWaterChanged;
 
-    private bool lastEnableWind;
-    private bool lastEnableWater;
     private float lastWindIntensity;
     private float lastDistanceScale;
 
     private bool lastEnableAmbisonic;
 
-    private bool lastSentEnableWind;
-    private bool lastSentEnableWater;
     private float lastSentWindIntensity;
     private string lastSentAmbientSoundFile;
     private float lastSentDistanceScale;
@@ -96,35 +81,6 @@ public class SceneManager : MonoBehaviour
     private bool lastSentEnableAmbisonic;
 
     private MeshRenderer[] windMeshes;
-
-    public bool EnableWind
-    {
-        get => enableWind;
-        set
-        {
-            if (enableWind != value)
-            {
-                enableWind = value;
-                OnEnableWindChanged?.Invoke(enableWind);
-                UpdateWindMaterials();
-                SendChangedMessages();
-            }
-        }
-    }
-
-    public bool EnableWater
-    {
-        get => enableWater;
-        set
-        {
-            if (enableWater != value)
-            {
-                enableWater = value;
-                OnEnableWaterChanged?.Invoke(enableWater);
-                SendChangedMessages();
-            }
-        }
-    }
 
     // NEW: Property to access the ambisonic toggle (if you need to reference it in code)
     public bool EnableAmbisonic
@@ -158,14 +114,10 @@ public class SceneManager : MonoBehaviour
 
     private void Start()
     {
-        lastEnableWind = enableWind;
-        lastEnableWater = enableWater;
         lastWindIntensity = windIntensity;
         lastDistanceScale = distanceScale;
         lastEnableAmbisonic = enableAmbisonic;
 
-        lastSentEnableWind = !enableWind;
-        lastSentEnableWater = !enableWater;
         lastSentWindIntensity = float.MinValue;
         lastSentDistanceScale = float.MinValue;
         lastSentAmbientSoundFile = null;
@@ -180,20 +132,6 @@ public class SceneManager : MonoBehaviour
 
     private void Update()
     {
-        if (enableWind != lastEnableWind)
-        {
-            lastEnableWind = enableWind;
-            OnEnableWindChanged?.Invoke(enableWind);
-            UpdateWindMaterials();
-            SendChangedMessages();
-        }
-
-        if (enableWater != lastEnableWater)
-        {
-            lastEnableWater = enableWater;
-            OnEnableWaterChanged?.Invoke(enableWater);
-            SendChangedMessages();
-        }
 
         if (Math.Abs(lastWindIntensity - windIntensity) > Mathf.Epsilon)
         {
@@ -245,7 +183,6 @@ public class SceneManager : MonoBehaviour
     {
         if (windMaterial == null || windMeshes == null) return;
 
-        float intensity = enableWind ? windIntensity : 0f;
         foreach (var mesh in windMeshes)
         {
             Material[] mats = mesh.materials;
@@ -253,7 +190,7 @@ public class SceneManager : MonoBehaviour
             {
                 if (mats[i].name.Contains(windMaterial.name))
                 {
-                    mats[i].SetFloat("_MotionSpeed", intensity);
+                    mats[i].SetFloat("_MotionSpeed", windIntensity);
                 }
             }
         }
@@ -263,23 +200,7 @@ public class SceneManager : MonoBehaviour
     {
         if (osc == null) return;
 
-        if (lastSentEnableWind != enableWind)
-        {
-            OscMessage message = new OscMessage { address = "/master/windstatus" };
-            message.values.Add(enableWind ? 1 : 0);
-            osc.Send(message);
-            lastSentEnableWind = enableWind;
-        }
-
-        if (lastSentEnableWater != enableWater)
-        {
-            OscMessage message = new OscMessage { address = "/master/waterstatus" };
-            message.values.Add(enableWater ? 1 : 0);
-            osc.Send(message);
-            lastSentEnableWater = enableWater;
-        }
-
-        if (enableWind && Math.Abs(lastSentWindIntensity - windIntensity) > Mathf.Epsilon)
+        if (Math.Abs(lastSentWindIntensity - windIntensity) > Mathf.Epsilon)
         {
             OscMessage message = new OscMessage { address = "/master/windintensity" };
             message.values.Add(windIntensity);
@@ -338,12 +259,27 @@ public class SceneManager : MonoBehaviour
             {
                 ambisonicAudioItems = new List<AudioItem>();
             }
+
+            // Immediately update the ambientSoundFile based on the selected index.
+            if (ambisonicAudioItems.Count > 0)
+            {
+                if (selectedAmbisonicIndex < 0 || selectedAmbisonicIndex >= ambisonicAudioItems.Count)
+                {
+                    selectedAmbisonicIndex = 0;
+                }
+                ambientSoundFile = ambisonicAudioItems[selectedAmbisonicIndex].audioFilePath;
+            }
+            else
+            {
+                ambientSoundFile = "";
+            }
         }
         else
         {
             Debug.LogError("Cache file not found at: " + cacheFilePath);
         }
     }
+
 
     private void OnApplicationQuit()
     {

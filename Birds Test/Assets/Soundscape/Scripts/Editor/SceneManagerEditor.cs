@@ -7,8 +7,6 @@ public class SceneManagerEditor : Editor
 {
     private SerializedProperty windIntensityProp;
     private SerializedProperty distanceScaleProp;
-    private SerializedProperty enableWindProp;
-    private SerializedProperty enableWaterProp;
     // NEW: add property for ambisonic toggle
     private SerializedProperty enableAmbisonicProp;
 
@@ -33,15 +31,12 @@ public class SceneManagerEditor : Editor
 
         // Find properties you want to show
         windIntensityProp = serializedObject.FindProperty("windIntensity");
+        windMaterialProp = serializedObject.FindProperty("windMaterial");
         distanceScaleProp = serializedObject.FindProperty("distanceScale");
-        enableWindProp = serializedObject.FindProperty("enableWind");
-        enableWaterProp = serializedObject.FindProperty("enableWater");
+        occlusionDiameterThresholdProp = serializedObject.FindProperty("occlusionDiameterThreshold");
 
         // NEW: find ambisonic audio toggle property
         enableAmbisonicProp = serializedObject.FindProperty("enableAmbisonic");
-
-        // NEW: find occlusion threshold property
-        occlusionDiameterThresholdProp = serializedObject.FindProperty("occlusionDiameterThreshold");
 
         // NEW: find global reverb properties
         globalRoomSizeProp = serializedObject.FindProperty("globalRoomSize");
@@ -52,20 +47,32 @@ public class SceneManagerEditor : Editor
         selectedAmbisonicIndexProp = serializedObject.FindProperty("selectedAmbisonicIndex");
         ambientSoundFileProp = serializedObject.FindProperty("ambientSoundFile");
 
-        windMaterialProp = serializedObject.FindProperty("windMaterial");
-
+        // Load the audio library and update the dropdown names.
         sceneManager.LoadAudioLibrary();
         UpdateAmbisonicAudioNames();
+
+        // Ensure the selected index is valid.
+        if (sceneManager.ambisonicAudioItems != null && sceneManager.ambisonicAudioItems.Count > 0)
+        {
+            if (selectedAmbisonicIndexProp.intValue < 0 ||
+                selectedAmbisonicIndexProp.intValue >= sceneManager.ambisonicAudioItems.Count)
+            {
+                selectedAmbisonicIndexProp.intValue = 0;
+            }
+            // Update the underlying ambientSoundFile string based on the current selection.
+            ambientSoundFileProp.stringValue = sceneManager.ambisonicAudioItems[selectedAmbisonicIndexProp.intValue].audioFilePath;
+        }
     }
+
 
     public override void OnInspectorGUI()
     {
         serializedObject.Update();
 
-        EditorGUILayout.PropertyField(enableWindProp);
-        EditorGUILayout.PropertyField(enableWaterProp);
         EditorGUILayout.PropertyField(windIntensityProp);
+        EditorGUILayout.PropertyField(windMaterialProp, new GUIContent("Wind Material"));
         EditorGUILayout.PropertyField(distanceScaleProp);
+        EditorGUILayout.PropertyField(occlusionDiameterThresholdProp, new GUIContent("Occlusion Diameter Threshold"));
 
         // Show the Global Reverb Parameters
         EditorGUILayout.Space();
@@ -104,12 +111,6 @@ public class SceneManagerEditor : Editor
             EditorGUILayout.HelpBox("Ambisonic audio is disabled.", MessageType.Info);
         }
 
-        EditorGUILayout.Space();
-        EditorGUILayout.PropertyField(windMaterialProp, new GUIContent("Wind Material"));
-
-        // NEW: Draw the occlusion threshold setting
-        EditorGUILayout.Space();
-        EditorGUILayout.PropertyField(occlusionDiameterThresholdProp, new GUIContent("Occlusion Diameter Threshold"));
 
         serializedObject.ApplyModifiedProperties();
     }
