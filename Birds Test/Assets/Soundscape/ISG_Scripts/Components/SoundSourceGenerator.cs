@@ -121,12 +121,16 @@ public class SoundSourceGenerator : SoundSource
     private void OnEnable()
     {
         enableGenerator = true;
+
+        SendMessages();
     }
 
     private void OnDisable()
     {
         if (isQuitting) return;
         enableGenerator = false;
+
+        SendMessages();
     }
     private void OnApplicationQuit()
     {

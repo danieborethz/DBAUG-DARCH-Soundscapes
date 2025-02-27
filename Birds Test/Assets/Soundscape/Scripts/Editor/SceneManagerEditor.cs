@@ -23,6 +23,7 @@ public class SceneManagerEditor : Editor
 
     private SerializedProperty selectedAmbisonicIndexProp;
     private SerializedProperty ambientSoundFileProp;
+    private SerializedProperty windMaterialProp;
     private SceneManager sceneManager;
     private string[] ambisonicAudioNames;
 
@@ -50,6 +51,8 @@ public class SceneManagerEditor : Editor
 
         selectedAmbisonicIndexProp = serializedObject.FindProperty("selectedAmbisonicIndex");
         ambientSoundFileProp = serializedObject.FindProperty("ambientSoundFile");
+
+        windMaterialProp = serializedObject.FindProperty("windMaterial");
 
         sceneManager.LoadAudioLibrary();
         UpdateAmbisonicAudioNames();
@@ -101,9 +104,11 @@ public class SceneManagerEditor : Editor
             EditorGUILayout.HelpBox("Ambisonic audio is disabled.", MessageType.Info);
         }
 
+        EditorGUILayout.Space();
+        EditorGUILayout.PropertyField(windMaterialProp, new GUIContent("Wind Material"));
+
         // NEW: Draw the occlusion threshold setting
         EditorGUILayout.Space();
-        EditorGUILayout.LabelField("Occlusion Settings", EditorStyles.boldLabel);
         EditorGUILayout.PropertyField(occlusionDiameterThresholdProp, new GUIContent("Occlusion Diameter Threshold"));
 
         serializedObject.ApplyModifiedProperties();
