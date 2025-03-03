@@ -24,10 +24,6 @@ public class ReverbZone : MonoBehaviour
     [Range(0f, 5f)]
     public float fadeRadius = 1f;
 
-    [Header("Visualization Settings")]
-    // If true, we'll show a simple mesh in-game. Otherwise it's typically for Editor-only viewing.
-    public bool showInGame = false;
-
     private Mesh sphereMesh;
     private MeshRenderer meshRenderer;
     private MeshFilter meshFilter;
@@ -38,13 +34,11 @@ public class ReverbZone : MonoBehaviour
     {
         InitializeComponents();
         // We do NOT set transform.localScale = radii * 2f here. We keep localScale = (1,1,1).
-        UpdateVisuals();
     }
 
     private void OnValidate()
     {
         InitializeComponents();
-        UpdateVisuals();
     }
 
     /// <summary>
@@ -108,32 +102,6 @@ public class ReverbZone : MonoBehaviour
         meshCollider.isTrigger = true;
     }
 
-    /// <summary>
-    /// This is for any visual tweaks, e.g., toggling renderer in play mode.
-    /// Note that we do NOT scale the transform based on 'radii' here.
-    /// </summary>
-    private void UpdateVisuals()
-    {
-        UpdateVisibility();
-    }
-
-    private void UpdateVisibility()
-    {
-        if (meshRenderer != null)
-        {
-            // Show the mesh if showInGame is true, or if we're in Editor mode (not playing)
-            meshRenderer.enabled = showInGame || !Application.isPlaying;
-        }
-    }
-
-    private void Update()
-    {
-        // Update visuals in edit mode
-        if (!Application.isPlaying)
-        {
-            UpdateVisuals();
-        }
-    }
 
     /// <summary>
     /// Draw ellipsoid & fade region in the Scene view for clarity.
