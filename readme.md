@@ -16,12 +16,44 @@ Welcome to the Unity Soundscapes Project form ETH Zürich! This Unity package en
 ## Components Guide 
 ### Sound Source Audio Component
 <img alt="Sound Source Audio Component" src="/docs/images/Sound_Source_Audio_Component.png" />
+
 - **Category**: The category of the sound sources. Usually a folder in the provided audio library (See step 5 of Installation and setup)
 - **Audio**: The audio files the Soundscape tool found in the respective category
 - **Source Type**: Source channel on where the audio should play on the sound engine
 - **Source**: Index of the source channel
 
+<hr>
+
+### Sound Source Generator
+With the sound source generator you can generate two types: 
+- Wind: Simulates rustling of leaves or needles of one or multiple trees
+- Water: Simulates different water bodies such as rivers and fountains
+
+### Sound Source Generator - Wind
+<img alt="Sound Source Audio Component" src="/docs/images/Sound_Source_Generator_Wind.png" />
+With wind you can either assign it to a single tree or a group objects of multiple trees (only the parent needs the component). If you assign it to a parent of a group then a forest size is calculated using the elements in the parent creating a wider sound instead of a single one. In the prefabs folder you find a forest prefab showcasing how it should be set up.
+
+- **Foliage Type**: If the wind should either simulate a rustling of leaves or needles
+- **Leaves/Tree Size**: Size of the leaves resp. tree
+- **Channel**: On which stereo channel the generator should play. The generators always run on stereo
+
+### Sound Source Generator - Water
+<img alt="Sound Source Audio Component" src="/docs/images/Sound_Source_Generator_Water.png" />
+
+- **Water Type**: If it either is a flow type water like river or a fountain type
+- **Size**: Size of the water body
+- **Channel**: On which stereo channel the generator should play. The generators always run on stereo
+- **Splashing Time**: Only on water type splashing fountain. The duration is splashes water
+- **Splashing Break**: Only on water type splashing fountain. The break between splashings.
+
+<hr>
+
+### Scene Manager
+
+<hr>
+
 ## Sample Scene Walkthrough 
+
 
 > [!NOTE]
 > Coming soon
