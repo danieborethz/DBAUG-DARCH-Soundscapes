@@ -117,8 +117,6 @@ public class SoundSourceAudioEditor : Editor
     {
         serializedObject.Update();
 
-        EditorGUILayout.LabelField("Multi-Object Editing", EditorStyles.boldLabel);
-
         if (targetsList.All(t => t.audioLibrary != null))
         {
             DrawCategoryDropdown();
