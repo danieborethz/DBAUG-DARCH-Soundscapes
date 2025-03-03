@@ -14,9 +14,12 @@ Welcome to the Unity Soundscapes Project form ETH Zürich! This Unity package en
 8. You're all set up! Check the [Components Guide section](#components-guide) for a detailed explanation of each component or open up the [Sample Scene](#sample-scene-walkthrough)
  
 ## Components Guide 
-
-* Overview of each components functionality, parameters and where to find them 
-
+### Sound Source Audio Component
+<img alt="Sound Source Audio Component" src="/docs/images/Sound_Source_Audio_Component.png" />
+- **Category**: The category of the sound sources. Usually a folder in the provided audio library (See step 5 of Installation and setup)
+- **Audio**: The audio files the Soundscape tool found in the respective category
+- **Source Type**: Source channel on where the audio should play on the sound engine
+- **Source**: Index of the source channel
 
 ## Sample Scene Walkthrough 
 
