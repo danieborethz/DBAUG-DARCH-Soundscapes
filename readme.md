@@ -48,7 +48,34 @@ With wind you can either assign it to a single tree or a group objects of multip
 
 <hr>
 
+### Reverb Zone
+<img alt="Sound Source Audio Component" src="/docs/images/Rever_Zone_Handles.png" />
+Local Reverb zones that alter/blend the reverb of the scene. They can be defined in the scene through handles (Colored cubes)
+<img alt="Sound Source Audio Component" src="/docs/images/Reverb_Zone.png" />
+
+- **Room Size**: Room Size of the local reverb
+- **Decay Time**: Decay Time of the local reverb
+- **Wet Dry Mix**: Wet/Dry Mix of the local reverb
+- **Eq**: Eq of the local reverb
+- **Radii**: The dimensions of the reverb zone. They can either be manipulated via the parameters or the handles in the scene itself.
+- **Fade Radius**: The radius in which the fading to the new local reverb starts
+
+<hr>
+
 ### Scene Manager
+<img alt="Sound Source Audio Component" src="/docs/images/Scene_Manager.png" />
+The Scene manager is inside the settings prefab which should always be added to the scene since it handles global settings and the communication between Unity and Max.
+
+- **Wind Intensity**: The general intensity of the wind in the scene. Affects the Sound Source Generators of type wind
+- **Wind Material**: Material which will be affected by the wind intensity. If you created a custom material for the trees you can set it here. The parameter the Scene Manager looks for is "_MotionSpeed"
+- **Distance Scale**: Distance Scale of the whole scene
+- **Occlusion Diameter Threshold**: The minimum diameter/area an object needs to have to generate occlusion
+- **Global Room Size**: Global Room size for the scene reverb
+- **Global Decay Time**: Global Decay Time for the scene reverb
+- **Global Wet Dry Mix**: Global Wet/Dry Mix for the scene reverb
+- **Global Eq**: Global Eq for the scene reverb
+- **Enable Ambisonic Audio**: If the scene should have an ambisonic audio for the ambient of the environment
+- **Ambisonic File**: All files for ambisonic found in the provided audio path. The Soundscape Tool looks through the provided audio library for a folder named "Ambisonics".
 
 <hr>
 
