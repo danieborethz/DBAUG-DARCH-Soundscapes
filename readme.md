@@ -49,7 +49,7 @@ With wind you can either assign it to a single tree or a group objects of multip
 <hr>
 
 ### Reverb Zone
-<img alt="Sound Source Audio Component" src="/docs/images/Rever_Zone_Handles.png" />
+<img alt="Sound Source Audio Component" src="/docs/images/Reverb_Zone_Handles.png" />
 Local Reverb zones that alter/blend the reverb of the scene. They can be defined in the scene through handles (Colored cubes)
 <img alt="Sound Source Audio Component" src="/docs/images/Reverb_Zone.png" />
 
