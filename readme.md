@@ -8,7 +8,10 @@ Welcome to the Unity Soundscapes Project form ETH Zürich! This Unity package en
 2. Start up Max 9 and load the Patch
 3. Create new unity project (universal 3D or 3D work with the provided assets) or open existing Unity Scene
 4. Add the downloaded Unity package <img alt="Instructions on installing the unity package" src="/docs/images/Package_installation.jpg" />
-5. Open up the Soundscape tool and load the audio library <img alt="Instructions on updating the audio library" src="/docs/images/Update_Audio_Library.jpg" />
+5. Open up the Soundscape tool and load the audio library
+> [!IMPORTANT]
+> Only the folders that contain at least one supported sound file (mp3, wav, aiff) will be identified as a category and added. If the folder doesn't have a supported audio in it it will NOT be displayed.
+<img alt="Instructions on updating the audio library" src="/docs/images/Update_Audio_Library.jpg" />
 6. In your scene, replace the camera with the Player prefab
 7. Add the settings prefab to the scene as well
 8. You're all set up! Check the [Components Guide section](#components-guide) for a detailed explanation of each component or open up the [Sample Scene](#sample-scene-walkthrough)
