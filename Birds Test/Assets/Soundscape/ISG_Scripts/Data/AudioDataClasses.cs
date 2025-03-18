@@ -8,7 +8,8 @@ public class AudioLibrary
     public int monoSources;
     public int stereoSources;
     public int ambisonicSources;
-    public List<AudioCategory> categories = new List<AudioCategory>();
+    public string rootFolderPath; 
+    public List<AudioCategory> categories;
 }
 
 [Serializable]
