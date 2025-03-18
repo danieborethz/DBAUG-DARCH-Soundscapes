@@ -226,6 +226,7 @@ public class AudioDataCacher : EditorWindow
             // Get all audio files in this directory.
             var audioFiles = Directory.GetFiles(directory, "*.mp3")
                                       .Concat(Directory.GetFiles(directory, "*.wav"))
+                                      .Concat(Directory.GetFiles(directory, "*.aiff"))
                                       .ToArray();
             foreach (var audioFile in audioFiles)
             {
