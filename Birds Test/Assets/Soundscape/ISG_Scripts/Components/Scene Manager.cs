@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.VisualScripting;
 
 public class SceneManager : MonoBehaviour
 {
@@ -128,6 +129,11 @@ public class SceneManager : MonoBehaviour
 
         osc = FindObjectOfType<OSC>();
         SendChangedMessages();
+
+        if (osc == null) return;
+        OscMessage message = new OscMessage { address = "/master/start" };
+        message.values.Add(0);
+        osc.Send(message);
     }
 
     private void Update()
