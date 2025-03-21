@@ -325,11 +325,17 @@ public class AudioDataCacher : EditorWindow
 [InitializeOnLoad]
 public static class AudioCacheUpdaterStartup
 {
+    private const string SessionKey = "AudioCacheUpdater_Initialized";
+
     static AudioCacheUpdaterStartup()
     {
-        EditorApplication.delayCall += () =>
+        if (!SessionState.GetBool(SessionKey, false)) // Runs only when the editor starts
         {
-            AudioDataCacher.AutoUpdateAudioCache();
-        };
+            SessionState.SetBool(SessionKey, true);
+            EditorApplication.delayCall += () =>
+            {
+                AudioDataCacher.AutoUpdateAudioCache();
+            };
+        }
     }
 }
