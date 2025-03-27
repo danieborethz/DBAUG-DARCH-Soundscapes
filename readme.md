@@ -1,6 +1,6 @@
 # Unity App for Soundscape Design and Evaluation – Quickstart
 
-Welcome to the Innovedum Project “Unity App for Soundscape Design and Evaluation”! This Unity package enables auralizing 3D landscapes so that students of architecture and spatial planning disciplines and other users who are not familiar with environmental acoustics understand principles of soundscape and perception processes and can better imagine the soundscape. It uses Max 9 as an external sound engine.
+Welcome to the [Innovedum Project “Unity App for Soundscape Design and Evaluation”](https://innovedumprojekte.ethz.ch/4110/en)! This Unity package enables auralizing 3D landscapes so that students of architecture and spatial planning disciplines and other users who are not familiar with environmental acoustics understand principles of soundscape and perception processes and can better imagine the soundscape. It uses Max 9 as an external sound engine.
 
 ## Installation & Setup 
 
